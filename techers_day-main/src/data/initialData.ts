@@ -1,0 +1,451 @@
+import { Department, GalleryItem, Teacher, CelebrationEvent, SiteSettings } from '../types';
+
+export const INITIAL_SITE_SETTINGS: SiteSettings = {
+  institutionName: "Excellence Institute of Technology",
+  heroTagline: "Honoring the Architects of Our Future",
+  heroTitle: "Happy Teachers' Day",
+  heroQuote: "To the world, you may be just a teacher, but to your students, you are a hero.",
+  heroQuoteAuthor: "Annual Ceremony 2026",
+
+  // Icon / Crest Settings
+  crestType: 'default-crest',
+  customCrestImageUrl: '',
+  badgeIcon: 'sparkles',
+  showSparkleBadge: true,
+  crestBorderGlow: 'gold',
+  crestSize: 'medium',
+
+  // Background & Transparency Settings
+  backgroundMode: 'gradient',
+  bgImageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1600&auto=format&fit=crop&q=80',
+  bgImageOpacity: 85,
+  bgBlur: 0,
+  bgOverlayColor: '#fbf9f8',
+  bgOverlayOpacity: 20,
+  bgGradientStyle: 'subtle-purple',
+
+  // Action Buttons
+  galleryButtonText: "GALLERY",
+  galleryButtonVisible: true,
+  departmentsButtonText: "SELECT YOUR DEPARTMENT",
+  departmentsButtonVisible: true,
+  rsvpButtonText: "RSVP NOW",
+  rsvpButtonVisible: false,
+
+  // Browser Tab Icon & Title
+  faviconUrl: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=64&auto=format&fit=crop&q=80",
+  siteTabTitle: "Happy Teachers' Day | Excellence Institute",
+
+  // Global Gifts & Reveal System (Shown to all teachers simultaneously)
+  giftImages: [
+    'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000&auto=format&fit=crop&q=80',
+  ],
+  giftRevealDateTime: '2026-09-05T10:00',
+  giftIsRevealed: true,
+  giftLockedMessage: 'A Special Gift is arriving for all teachers! Unlocks at the exact scheduled celebration time.',
+
+  // Home Page Countdown Box ("Coming soon something big")
+  showCountdownBox: true,
+  countdownTitle: 'Coming Soon: Something Big!',
+  countdownSubtitle: "Teachers' Day Grand Ceremony & Secret Gift Reveal",
+  countdownTargetDate: '2026-09-05T10:00',
+};
+
+export const PRESET_BACKGROUND_IMAGES = [
+  {
+    id: 'campus-library',
+    name: 'Grand University Library',
+    url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1600&auto=format&fit=crop&q=80',
+    category: 'Campus'
+  },
+  {
+    id: 'academic-hall',
+    name: 'Classic Academic Hall',
+    url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1600&auto=format&fit=crop&q=80',
+    category: 'Campus'
+  },
+  {
+    id: 'golden-celebration',
+    name: 'Golden Festive Bokeh',
+    url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1600&auto=format&fit=crop&q=80',
+    category: 'Celebration'
+  },
+  {
+    id: 'books-warmth',
+    name: 'Scholar Books & Warm Light',
+    url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1600&auto=format&fit=crop&q=80',
+    category: 'Academic'
+  },
+  {
+    id: 'graduation-dusk',
+    name: 'Graduation & Twilight Sky',
+    url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1600&auto=format&fit=crop&q=80',
+    category: 'Ceremony'
+  },
+  {
+    id: 'marble-gold',
+    name: 'Imperial Marble & Gold',
+    url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1600&auto=format&fit=crop&q=80',
+    category: 'Luxury'
+  }
+];
+
+export const PRESET_CREST_ICONS = [
+  { id: 'default-crest', name: 'University Crest', icon: 'shield' },
+  { id: 'academic-cap', name: 'Graduation Cap', icon: 'graduation-cap' },
+  { id: 'golden-trophy', name: 'Excellence Trophy', icon: 'trophy' },
+  { id: 'torch-of-wisdom', name: 'Torch of Wisdom', icon: 'flame' },
+  { id: 'star-crest', name: 'Star of Honor', icon: 'star' },
+  { id: 'book-open', name: 'Open Book of Knowledge', icon: 'book-open' },
+  { id: 'custom-image', name: 'Custom Photo / Logo URL', icon: 'image' },
+];
+
+export const DEFAULT_GIFT_IMAGES: { label: string; url: string }[] = [
+  {
+    label: 'Golden Trophy of Honor',
+    url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Celebratory Gift Box & Wishes',
+    url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Scholar Books & Warm Light',
+    url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Graduation Ceremony & Joy',
+    url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000&auto=format&fit=crop&q=80',
+  },
+];
+
+export const INITIAL_EVENT: CelebrationEvent = {
+  title: "Teachers' Day Celebration 2026",
+  date: "5 Sept 2026",
+  time: "10:00 AM",
+  venue: "College Auditorium",
+  year: "2026",
+  invitationNote: "Join us in celebrating the faculty mentors who shape tomorrow's innovators.",
+  invitationHeading: "You are Specially Invited to the Teachers' Day Celebration 2026",
+  rsvpButtonText: "RSVP CONFIRMATION",
+  showRsvpButton: true,
+  accentTheme: 'indigo-gold',
+};
+
+export const INITIAL_DEPARTMENTS: Department[] = [
+  {
+    id: "cse",
+    name: "Computer Science Engineering",
+    code: "CSE",
+    description: "Pioneering computing, artificial intelligence, and software innovation.",
+    headOfDepartment: "Dr. Emily Chen",
+    teacherCount: 28,
+  },
+  {
+    id: "me",
+    name: "Mechanical Engineering",
+    code: "ME",
+    description: "Designing tomorrow's robotics, thermal systems, and aerospace dynamics.",
+    headOfDepartment: "Dr. Alistair Vance",
+    teacherCount: 24,
+  },
+  {
+    id: "ce",
+    name: "Civil Engineering",
+    code: "CE",
+    description: "Constructing resilient infrastructure, sustainable urbanism, and environmental marvels.",
+    headOfDepartment: "Prof. Kenneth Meyer",
+    teacherCount: 22,
+  },
+  {
+    id: "ece",
+    name: "Electronics & Communication",
+    code: "ECE",
+    description: "Architecting semiconductor networks, signal processing, and photonics.",
+    headOfDepartment: "Dr. Sunita Rao",
+    teacherCount: 26,
+  },
+  {
+    id: "sh",
+    name: "Science & Humanities",
+    code: "S&H",
+    description: "Cultivating fundamental physics, mathematics, chemical sciences, and humane philosophy.",
+    headOfDepartment: "Dr. Arvind Kumar",
+    teacherCount: 32,
+  },
+];
+
+export const INITIAL_TEACHERS: Teacher[] = [
+  // Science & Humanities
+  {
+    id: "dr-arvind-kumar",
+    name: "Dr. Arvind Kumar",
+    designation: "Professor of Advanced Physics",
+    departmentId: "sh",
+    departmentName: "Science & Humanities",
+    subjects: ["Quantum Mechanics", "Thermodynamics", "Electromagnetism"],
+    photoUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCZGR6k2nBnEZdIcueoK1e_Slm5OrO2TuJ5GWsTHfdyg3Ke4_Eydq0qEecoesAI0r_k5Cyuc_-CNoQ7_CRj1rJvSQV6yVSNySX8wY8xdsyRlqDyK01Iub1rJ6xJJjmqfi36nhDhGv3bow33gLNvAXN7LhLk6hJjtJ72UUujSkoO-NJ4Kz6xwgTK3jVoKndihuOaUWDeSFrbPFyQjXZPek9k0nK6UR7FawCjYJM7tnUANv-nyS6AM27X",
+    appreciationQuote: "Thank you for being more than a teacher. Your guidance, patience, and dedication inspire us every day.",
+    bio: "With over 24 years of academic excellence in quantum dynamics, Dr. Kumar is renowned for making intricate physical phenomena intuitive and fascinating for every student.",
+    dateAdded: "Sep 01, 2023",
+    email: "a.kumar@eit.edu",
+    officeLocation: "Science Block 3, Room 402",
+  },
+  {
+    id: "dr-robert-hughes",
+    name: "Dr. Robert Hughes",
+    designation: "Senior Professor",
+    departmentId: "sh",
+    departmentName: "Science & Humanities",
+    subjects: ["Physics", "Quantum Mech", "Fluid Dynamics"],
+    photoUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuATf4X5MCUaqNy5M9FBmeJdOz8Wy8SjR2Yj7MRph9l5Ctr9ljkjck4YdQos0KrjsjH69t9qUlHeEhmq5eI20CA-7rUEg0mT7ishQqt1t9Cowk3NEPqJHLiXVcE1d9dxNvZLeYOLYigiNEgwakmy1NTzTBW6lKMwboG4fJadAHnzX-OqT67kxQDXoa4iaIslTJpu92sWy5YJ9cUVRTkBfbL63WF5qrnAQr29iykvnWP1cc_1OWeM4ySz",
+    appreciationQuote: "A mentor who turns challenging theoretical equations into memorable classroom experiments.",
+    bio: "Passionate educator exploring condensed matter physics and mentoring student research across disciplines.",
+    dateAdded: "Sep 12, 2023",
+    email: "r.hughes@eit.edu",
+    officeLocation: "Faculty Tower B, Room 210",
+  },
+  {
+    id: "prof-sarah-jenkins",
+    name: "Prof. Sarah Jenkins",
+    designation: "Associate Professor",
+    departmentId: "sh",
+    departmentName: "Science & Humanities",
+    subjects: ["Mod. Poetry", "Technical Writing", "Literature"],
+    photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Empowering every voice with eloquence, critical thinking, and artistic depth.",
+    bio: "Literature and rhetoric specialist guiding undergraduate research papers and annual campus anthologies.",
+    dateAdded: "Aug 05, 2023",
+    email: "s.jenkins@eit.edu",
+    officeLocation: "Humanities Wing, Room 108",
+  },
+  {
+    id: "dr-meenakshi-sundaram",
+    name: "Dr. Meenakshi Sundaram",
+    designation: "Professor of Applied Mathematics",
+    departmentId: "sh",
+    departmentName: "Science & Humanities",
+    subjects: ["Differential Calculus", "Complex Analysis", "Linear Algebra"],
+    photoUrl: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Transforming abstract mathematical principles into crystal-clear logic and joy of discovery.",
+    bio: "Specializing in numerical analysis and topology, inspiring generations of mathematicians for 19 years.",
+    dateAdded: "Jul 20, 2023",
+    email: "m.sundaram@eit.edu",
+    officeLocation: "Math Center, Room 204",
+  },
+
+  // Computer Science Engineering
+  {
+    id: "dr-emily-chen",
+    name: "Dr. Emily Chen",
+    designation: "Department Head & Professor",
+    departmentId: "cse",
+    departmentName: "Computer Science Engineering",
+    subjects: ["Machine Learning", "Algorithms", "Calculus", "Linear Alg."],
+    photoUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-9ppe6mKxy_nliVr_15xb-1Coh5Y-Sq2T1a8M3oWChkPfLMrZkPrCW9VWP4tc8Czu4kfo_y86KcdBTcKCEiWhMgGTtSVILr9zCMWNio1Y1dlFntKjMTe8tyOcAwNkl28avODcs1DxKVXpoHk_KZCZVA7PrKqWnANfXKY_Hwv0WG66mg5VST2wT8bnm5bxNJFlgzW3YKkO05aL1zulw93w-aLMVjS_N8vf2e_egUSMrMJM8J7lVhqx",
+    appreciationQuote: "Inspiring future computer scientists with clarity, precision, and boundless enthusiasm.",
+    bio: "Head of CSE with over 18 years in computational mathematics and distributed systems research.",
+    dateAdded: "Oct 01, 2023",
+    email: "e.chen@eit.edu",
+    officeLocation: "Turing Lab Building, Level 4",
+  },
+  {
+    id: "prof-vikram-malhotra",
+    name: "Prof. Vikram Malhotra",
+    designation: "Associate Professor of AI & Data",
+    departmentId: "cse",
+    departmentName: "Computer Science Engineering",
+    subjects: ["Deep Learning", "Natural Language Processing", "Cloud Computing"],
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Guiding young developers to code with purpose, ethics, and relentless innovation.",
+    bio: "Published AI researcher and hackathon mentor leading the collegiate Autonomous Systems Guild.",
+    dateAdded: "Nov 02, 2023",
+    email: "v.malhotra@eit.edu",
+    officeLocation: "AI Lab, Room 310",
+  },
+  {
+    id: "dr-sophia-patel",
+    name: "Dr. Sophia Patel",
+    designation: "Assistant Professor",
+    departmentId: "cse",
+    departmentName: "Computer Science Engineering",
+    subjects: ["Cybersecurity", "Cryptography", "Operating Systems"],
+    photoUrl: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Instilling deep problem-solving intuition and defensive design into every coder.",
+    bio: "Cybersecurity strategist and open-source advocate dedicated to secure web infrastructure.",
+    dateAdded: "Dec 18, 2023",
+    email: "s.patel@eit.edu",
+    officeLocation: "Security Research Hub, Room 105",
+  },
+
+  // Mechanical Engineering
+  {
+    id: "dr-alistair-vance",
+    name: "Dr. Alistair Vance",
+    designation: "Department Head & Professor",
+    departmentId: "me",
+    departmentName: "Mechanical Engineering",
+    subjects: ["Thermodynamics", "Aerodynamics", "Turbomachinery"],
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Lighting the spark of mechanical engineering with hands-on mastery and precision.",
+    bio: "Former aerospace propulsion specialist now directing high-speed aerodynamic tunnel projects.",
+    dateAdded: "Sep 08, 2023",
+    email: "a.vance@eit.edu",
+    officeLocation: "Fluid Mechanics Wing, Room 301",
+  },
+  {
+    id: "prof-david-miller",
+    name: "Prof. David Miller",
+    designation: "Professor of Robotics",
+    departmentId: "me",
+    departmentName: "Mechanical Engineering",
+    subjects: ["Kinematics", "Robotics", "Mechatronics"],
+    photoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Transforming raw curiosity into precision mechanics and inspiring innovations.",
+    bio: "Leading mechanical prototyping and robotics workshops for undergraduate engineering teams.",
+    dateAdded: "Nov 15, 2023",
+    email: "d.miller@eit.edu",
+    officeLocation: "Innovation Workshop A",
+  },
+  {
+    id: "prof-rohan-gupta",
+    name: "Prof. Rohan Gupta",
+    designation: "Associate Professor",
+    departmentId: "me",
+    departmentName: "Mechanical Engineering",
+    subjects: ["Material Science", "Finite Element Analysis", "CAD/CAM"],
+    photoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Teaching that every fine machine begins with patient craftsmanship and rigorous analysis.",
+    bio: "Expert in lightweight composite materials and smart manufacturing simulations.",
+    dateAdded: "Jan 14, 2024",
+    email: "r.gupta@eit.edu",
+    officeLocation: "Design Lab 2, Room 114",
+  },
+
+  // Civil Engineering
+  {
+    id: "prof-kenneth-meyer",
+    name: "Prof. Kenneth Meyer",
+    designation: "Department Head & Senior Professor",
+    departmentId: "ce",
+    departmentName: "Civil Engineering",
+    subjects: ["Geotechnical Engineering", "Urban Planning", "Soil Mechanics"],
+    photoUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Instilling sustainability and timeless integrity into every infrastructure design.",
+    bio: "Head of Civil Engineering with 25 years guiding regional eco-infrastructure initiatives.",
+    dateAdded: "Oct 12, 2023",
+    email: "k.meyer@eit.edu",
+    officeLocation: "Civil Engineering Hall, Room 401",
+  },
+  {
+    id: "prof-marcus-thorne",
+    name: "Prof. Marcus Thorne",
+    designation: "Professor of Structural Design",
+    departmentId: "ce",
+    departmentName: "Civil Engineering",
+    subjects: ["Structural Analysis", "Earthquake Engineering", "Bridge Design"],
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Building not only resilient monuments and bridges, but unbreakable character.",
+    bio: "Consultant for regional seismic retrofitting and mentor for national concrete canoe championships.",
+    dateAdded: "Jan 10, 2024",
+    email: "m.thorne@eit.edu",
+    officeLocation: "Civil Engineering Hall, Room 112",
+  },
+  {
+    id: "dr-priya-sharma",
+    name: "Dr. Priya Sharma",
+    designation: "Associate Professor",
+    departmentId: "ce",
+    departmentName: "Civil Engineering",
+    subjects: ["Hydrology", "Environmental Engineering", "Water Resources"],
+    photoUrl: "https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Pioneering eco-friendly water management and clean environmental futures.",
+    bio: "Dedicated researcher in watershed conservation and sustainable hydrological systems.",
+    dateAdded: "Feb 05, 2024",
+    email: "p.sharma@eit.edu",
+    officeLocation: "Eco-Tech Lab, Room 206",
+  },
+
+  // Electronics & Communication
+  {
+    id: "dr-sunita-rao",
+    name: "Dr. Sunita Rao",
+    designation: "Department Head & Professor",
+    departmentId: "ece",
+    departmentName: "Electronics & Communication",
+    subjects: ["Photonics", "Wireless Networks", "Optical Communication"],
+    photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Illuminating the future of telecom and empowering engineers to reach worldwide connectivity.",
+    bio: "Leading photonics research and international symposiums in next-gen wireless standards.",
+    dateAdded: "Aug 15, 2023",
+    email: "s.rao@eit.edu",
+    officeLocation: "Telecom Tower, Room 501",
+  },
+  {
+    id: "dr-ananya-sen",
+    name: "Dr. Ananya Sen",
+    designation: "Associate Professor",
+    departmentId: "ece",
+    departmentName: "Electronics & Communication",
+    subjects: ["VLSI Design", "Embedded Systems", "Signals & Systems"],
+    photoUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Bridging microscopic silicon circuits to global satellite communication networks.",
+    bio: "Expert in microelectronic fabrication, guiding students toward patents and high-impact publications.",
+    dateAdded: "Dec 04, 2023",
+    email: "a.sen@eit.edu",
+    officeLocation: "Silicon Center, Room 304",
+  },
+  {
+    id: "prof-elena-rostova",
+    name: "Prof. Elena Rostova",
+    designation: "Assistant Professor",
+    departmentId: "ece",
+    departmentName: "Electronics & Communication",
+    subjects: ["Digital Signal Processing", "Microcontrollers", "IoT Systems"],
+    photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=500&auto=format&fit=crop&q=80",
+    appreciationQuote: "Teaching with warmth, patience, and contagious curiosity for every smart electronic device.",
+    bio: "Specialist in embedded sensor networks and mentor for student robotics competitions.",
+    dateAdded: "Feb 22, 2024",
+    email: "e.rostova@eit.edu",
+    officeLocation: "Robotics & IoT Lab, Room 102",
+  }
+];
+
+export const INITIAL_GALLERY: GalleryItem[] = [
+  {
+    id: "g1",
+    title: "Graduation Day 2023",
+    category: "Celebrations",
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuClCTxVlNb9XRx3eDDxnUxKVsUqr_k-2z0A7ZP8x9kkg5BdB40XyGw_uIizWWMBxhyTS3HcIFeZZgwcx9nrDSpY1eeb_bIxEIQ4Fn5By0dWG0_yCgy_N2VifJFg206e065ocU4yL109VKzsS8XnYBf4GZB_hG5pSczyMKEvgCkzmwmoLy801sj7I2FKlTMfG9LZ0OnIuvjrnRl2RblcFKT50x9Zr8-WOei3SOWlIdTzOG0-Bwc5LuIX",
+    date: "June 2023",
+    description: "Inspiring one-on-one mentorship moments under the sunlit library arches during graduation week.",
+  },
+  {
+    id: "g2",
+    title: "Annual Faculty Gathering",
+    category: "Faculty",
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAkcm61RO_GNXix5WMuflnFYrH6DEJNJdNfGoVaTkTR_ClFrTZy8V5tcM7WzcSulGGktjh8lk5w0CpMksuxEPPcL0JDPYHyCzo2HQIoBcB1pk9LC36Slu0q_QGZ1p17pZoxoWQI6KLzIrsCGqJcb8RjPB4pGZVxy0DgMTCQ7GmY3NwaecPTSmLvmA7R-8s_XZ0TUdGsy4peP4GynzVq4A9YBWZYMnIFVltONz2SCcfJ_QhnYtgbvjTa",
+    date: "August 2023",
+    description: "Deans and department heads collaborating in the prestigious executive council hall.",
+  },
+  {
+    id: "g3",
+    title: "Advanced Physics Lab",
+    category: "Classroom",
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuACDiV2FxXClTkXTU474pQVLHhqJAA8MQa8-0RunHlF_VsnUlKZSOdSuesB_lakEpN82P007hflv8VFdU1t4ntIKDFQNYGWm_NIetAmHbIpuXoxQSE9VLZetaX1JqKK3PiYHLJLbm4wMiafyIBs-TxUvTjvUArBHgiDm_01rwrsg6pEWt2-oz3WN431ci_uq5hYw83ZGqQKl9c0DM8POwWAlRw1lqJzNGkxdsKcO4S1rZRmr-bmeC23",
+    date: "October 2023",
+    description: "Interactive classroom demonstration with enthusiastic students analyzing quantum mechanics principles.",
+  },
+  {
+    id: "g4",
+    title: "Architecture Studio Critique",
+    category: "Classroom",
+    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuB2PXAppMNe6ws9Efu984G758s76UpWV730IWs7WpP0wPawYC_-nlWgAItY8baDf00j6ZuuIbfkQW-mtvWPakxytGG1OmZbdVjh83VWM9lOdNHGuYsbUCA6aG4rxgZhvqeMKQP8gpR4xAb-snMSbDSEVOu5jMhC3SC3iY6pI7WPMee4Kjs9ZzX3mVuyxw5av88cvTdogH91LH9sruE0vhy2DLoDZcoLxkrIVTA-iEEO8h6rVbhkOWt-",
+    date: "November 2023",
+    description: "Hands-on structural model review between senior mentors and architecture students.",
+  },
+
+];

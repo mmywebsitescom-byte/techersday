@@ -1,0 +1,7 @@
+{
+  "name": "Honoring Mentors - Teachers' Day",
+  "description": "An academic celebration and honorary portal for Teachers' Day at Excellence Institute of Technology, featuring departmental teacher profiles, invitation cards, interactive memories gallery, and administrative management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
