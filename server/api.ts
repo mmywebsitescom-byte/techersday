@@ -21,19 +21,11 @@ const router = express.Router();
 // ── Health ───────────────────────────────────────────────────────────────────
 router.get('/health', async (_req, res) => {
   try {
-    if (!process.env.DATABASE_URL) {
-      return res.status(500).json({
-        status: 'error',
-        database: 'not_configured',
-        error: 'DATABASE_URL environment variable is missing on Vercel.',
-        hint: 'Go to Vercel → Project Settings → Environment Variables, add DATABASE_URL, and redeploy.',
-      });
-    }
-
     const stats = await db.getStats();
     res.json({
       status: 'ok',
-      database: 'supabase-postgres',
+      database: 'supabase-connected',
+      provider: 'supabase-rest-https',
       stats,
       timestamp: new Date().toISOString(),
     });
