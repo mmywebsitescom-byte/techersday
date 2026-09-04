@@ -35,6 +35,23 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   // Browser Tab Icon & Title
   faviconUrl: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=64&auto=format&fit=crop&q=80",
   siteTabTitle: "Happy Teachers' Day | Excellence Institute",
+
+  // Global Gifts & Reveal System (Shown to all teachers simultaneously)
+  giftImages: [
+    'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000&auto=format&fit=crop&q=80',
+  ],
+  giftRevealDateTime: '2026-09-05T10:00',
+  giftIsRevealed: true,
+  giftLockedMessage: 'A Special Gift is arriving for all teachers! Unlocks at the exact scheduled celebration time.',
+
+  // Home Page Countdown Box ("Coming soon something big")
+  showCountdownBox: true,
+  countdownTitle: 'Coming Soon: Something Big!',
+  countdownSubtitle: "Teachers' Day Grand Ceremony & Secret Gift Reveal",
+  countdownTargetDate: '2026-09-05T10:00',
 };
 
 export const PRESET_BACKGROUND_IMAGES = [
@@ -84,6 +101,25 @@ export const PRESET_CREST_ICONS = [
   { id: 'star-crest', name: 'Star of Honor', icon: 'star' },
   { id: 'book-open', name: 'Open Book of Knowledge', icon: 'book-open' },
   { id: 'custom-image', name: 'Custom Photo / Logo URL', icon: 'image' },
+];
+
+export const DEFAULT_GIFT_IMAGES: { label: string; url: string }[] = [
+  {
+    label: 'Golden Trophy of Honor',
+    url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Celebratory Gift Box & Wishes',
+    url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Scholar Books & Warm Light',
+    url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Graduation Ceremony & Joy',
+    url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000&auto=format&fit=crop&q=80',
+  },
 ];
 
 export const INITIAL_EVENT: CelebrationEvent = {

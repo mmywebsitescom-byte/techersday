@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Image as ImageIcon, Building2, ArrowLeft } from 'lucide-react';
+import { Home, Image as ImageIcon, Building2, ArrowLeft, Gift } from 'lucide-react';
 
-type Screen = 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin';
+type Screen = 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin' | 'gift';
 
 interface NavbarProps {
   currentScreen: Screen;
@@ -14,6 +14,7 @@ const backMap: Partial<Record<Screen, { label: string; target: Screen }>> = {
   'department-teachers': { label: 'Departments', target: 'departments' },
   teacher:               { label: 'Faculty', target: 'department-teachers' },
   gallery:               { label: 'Home', target: 'home' },
+  gift:                  { label: 'Home', target: 'home' },
 };
 
 export const Navbar: React.FC<NavbarProps> = ({ currentScreen, onNavigate }) => {
@@ -109,6 +110,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentScreen, onNavigate }) => 
         >
           <ImageIcon size={14} />
           <span>Gallery</span>
+        </button>
+
+        {/* Gift Page Button */}
+        <button
+          onClick={() => onNavigate('gift')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-inter text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+            currentScreen === 'gift'
+              ? 'bg-gradient-to-r from-[#ffe088] to-[#fed65b] text-[#241a00] shadow-sm'
+              : 'text-[#735c00] hover:text-[#241a00] hover:bg-[#fed65b]/20'
+          }`}
+          title="View Gift Book"
+        >
+          <Gift size={14} />
+          <span>Gifts</span>
         </button>
       </nav>
     </div>

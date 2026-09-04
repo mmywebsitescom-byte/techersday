@@ -6,6 +6,7 @@ import { DepartmentFacultyScreen } from './components/DepartmentFacultyScreen';
 import { TeacherProfileScreen } from './components/TeacherProfileScreen';
 import { GalleryScreen } from './components/GalleryScreen';
 import { AdminPortal } from './components/AdminPortal';
+import { GiftPage } from './components/GiftPage';
 import { RSVPModal } from './components/RSVPModal';
 import { Teacher, Department, GalleryItem, RSVPRecord, CelebrationEvent, SiteSettings } from './types';
 import {
@@ -65,13 +66,14 @@ export function App() {
     if (path === '/admin' || path.startsWith('/admin/')) return { screen: 'admin' as const, teacher: null, dept: null };
     if (path === '/gallery') return { screen: 'gallery' as const, teacher: null, dept: null };
     if (path === '/departments') return { screen: 'departments' as const, teacher: null, dept: null };
+    if (path === '/gift' || path === '/gifts') return { screen: 'gift' as const, teacher: null, dept: null };
 
     return { screen: 'home' as const, teacher: null, dept: null };
   };
 
   const initialParsed = parseCurrentUrl(INITIAL_TEACHERS, INITIAL_DEPARTMENTS);
 
-  const [currentScreen, setCurrentScreenRaw] = useState<'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin'>(initialParsed.screen);
+  const [currentScreen, setCurrentScreenRaw] = useState<'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin' | 'gift'>(initialParsed.screen);
   const [teachers, setTeachers] = useState<Teacher[]>(INITIAL_TEACHERS);
   const [departments, setDepartments] = useState<Department[]>(INITIAL_DEPARTMENTS);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY);
@@ -95,7 +97,7 @@ export function App() {
 
   // URL-aware navigation — updates browser URL when screen changes
   const setCurrentScreen = (
-    screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin',
+    screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin' | 'gift',
     targetTeacher?: Teacher,
     targetDept?: Department
   ) => {
@@ -110,6 +112,7 @@ export function App() {
       newUrl = t ? `/teacher/${t.id}` : '/departments';
     } else if (screen === 'gallery') newUrl = '/gallery';
     else if (screen === 'admin') newUrl = '/admin';
+    else if (screen === 'gift') newUrl = '/gift';
 
     if (window.location.pathname !== newUrl) {
       window.history.pushState({ screen, teacherId: targetTeacher?.id, deptId: targetDept?.id }, '', newUrl);
@@ -499,6 +502,7 @@ export function App() {
           teacher={selectedTeacher}
           allTeachers={teachers}
           eventInfo={eventInfo}
+          settings={siteSettings}
           onNavigate={setCurrentScreen}
           onSelectTeacher={handleSelectTeacher}
           onOpenRSVP={handleOpenRSVP}
@@ -516,6 +520,14 @@ export function App() {
         <GalleryScreen
           galleryItems={galleryItems}
           onAddMemory={handleAddGallery}
+          onNavigate={setCurrentScreen}
+        />
+      )}
+
+      {currentScreen === 'gift' && (
+        <GiftPage
+          settings={siteSettings}
+          teachers={teachers}
           onNavigate={setCurrentScreen}
         />
       )}

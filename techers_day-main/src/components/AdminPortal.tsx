@@ -50,6 +50,7 @@ import {
   RefreshCw,
   Globe,
   FolderPlus,
+  Gift,
 } from 'lucide-react';
 import {
   Teacher,
@@ -67,6 +68,7 @@ import {
   PRESET_CREST_ICONS,
   INITIAL_SITE_SETTINGS,
   INITIAL_EVENT,
+  DEFAULT_GIFT_IMAGES,
 } from '../data/initialData';
 import { CrestRenderer } from './CrestRenderer';
 import { downloadImageFile } from '../utils/downloadUtils';
@@ -126,7 +128,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
   // Active Admin View
   const [activeTab, setActiveTab] = useState<
-    'invitation' | 'appearance' | 'gallery' | 'teachers' | 'departments' | 'rsvps' | 'dashboard' | 'settings'
+    'invitation' | 'appearance' | 'gallery' | 'teachers' | 'departments' | 'rsvps' | 'dashboard' | 'settings' | 'gifts'
   >('invitation');
 
   // Teacher Table State
@@ -150,6 +152,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [formOffice, setFormOffice] = useState('');
   const [currentTagInput, setCurrentTagInput] = useState('');
   const [formSubjects, setFormSubjects] = useState<string[]>([]);
+  const [formGiftImages, setFormGiftImages] = useState<string[]>([]);
+  const [giftImageUrlInput, setGiftImageUrlInput] = useState('');
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -192,6 +196,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const logoFileInputRef = useRef<HTMLInputElement | null>(null);
   const wallpaperFileInputRef = useRef<HTMLInputElement | null>(null);
   const faviconFileInputRef = useRef<HTMLInputElement | null>(null);
+  const giftFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Event & Invitation Settings State
   const [localEvent, setLocalEvent] = useState<CelebrationEvent>(() => eventInfo || INITIAL_EVENT);
@@ -585,7 +590,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    target: 'gallery' | 'teacher' | 'logo' | 'wallpaper' | 'favicon'
+    target: 'gallery' | 'teacher' | 'logo' | 'wallpaper' | 'favicon' | 'gift'
   ) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -611,6 +616,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       } else if (target === 'teacher') {
         setFormPhotoUrl(compressed);
         setNotification(`Profile photo "${file.name}" optimized and loaded!`);
+      } else if (target === 'gift') {
+        setFormGiftImages((prev) => [...prev, compressed]);
+        setNotification(`Gift page uploaded and added! 🎁`);
       } else if (target === 'logo') {
         const updated = {
           ...localSettings,
@@ -736,6 +744,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     setFormEmail('');
     setFormOffice('');
     setFormSubjects(['Physics', 'Thermodynamics']);
+    setFormGiftImages([]);
+    setGiftImageUrlInput('');
     setFormError('');
     setIsDrawerOpen(true);
   };
@@ -751,6 +761,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     setFormEmail(teacher.email || '');
     setFormOffice(teacher.officeLocation || '');
     setFormSubjects([...teacher.subjects]);
+    setFormGiftImages(teacher.giftImages ? [...teacher.giftImages] : []);
+    setGiftImageUrlInput('');
     setFormError('');
     setIsDrawerOpen(true);
   };
@@ -766,6 +778,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
   const handleRemoveSubjectTag = (tagToRemove: string) => {
     setFormSubjects(formSubjects.filter((s) => s !== tagToRemove));
+  };
+
+  const handleAddGiftImageUrl = () => {
+    if (giftImageUrlInput.trim()) {
+      setFormGiftImages([...formGiftImages, giftImageUrlInput.trim()]);
+      setGiftImageUrlInput('');
+    }
+  };
+
+  const handleRemoveGiftImage = (indexToRemove: number) => {
+    setFormGiftImages(formGiftImages.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSaveTeacher = async (e: React.FormEvent) => {
@@ -794,8 +817,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           email: formEmail,
           officeLocation: formOffice,
           subjects: formSubjects,
+          giftImages: formGiftImages,
         });
-        setNotification(`Updated profile for ${formName}`);
+        setNotification(`Updated profile & gift collection for ${formName}`);
       } else {
         await onAddTeacher({
           name: formName,
@@ -808,8 +832,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           email: formEmail,
           officeLocation: formOffice,
           subjects: formSubjects,
+          giftImages: formGiftImages,
         });
-        setNotification(`Added ${formName} to Teachers' Day portal`);
+        setNotification(`Added ${formName} with gift collection to Teachers' Day portal`);
       }
       setIsDrawerOpen(false);
     } catch (err) {
@@ -1044,6 +1069,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </span>
             </button>
 
+            {/* 🎁 Global Gifts & Reveal Schedule Tab */}
+            <button
+              onClick={() => setActiveTab('gifts')}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                activeTab === 'gifts'
+                  ? 'bg-[#180331] text-[#ffffff] font-semibold shadow-xs'
+                  : 'text-[#4a454e] hover:bg-[#f5f3f3] hover:text-[#180331]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Gift size={18} className={activeTab === 'gifts' ? 'text-[#ffe088]' : 'text-[#9a4b00]'} />
+                <span>Gifts &amp; Countdown</span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fed65b]/30 text-[#9a4b00]">
+                {(localSettings.giftImages || DEFAULT_GIFT_IMAGES).length}
+              </span>
+            </button>
+
             <button
               onClick={() => setActiveTab('gallery')}
               className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
@@ -1146,6 +1189,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               <option value="appearance">Home &amp; Logo</option>
               <option value="departments">Departments</option>
               <option value="teachers">Teachers</option>
+              <option value="gifts">Gifts &amp; Countdown</option>
               <option value="gallery">Gallery</option>
               <option value="rsvps">RSVPs</option>
               <option value="dashboard">Dashboard</option>
@@ -1482,6 +1526,332 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   >
                     Save Changes Now →
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: GLOBAL GIFTS, EXACT REVEAL TIMER & HOME COUNTDOWN BOX                */}
+        {/* ========================================================================= */}
+        {activeTab === 'gifts' && (
+          <div className="p-6 md:p-10 max-w-7xl w-full mx-auto space-y-8 animate-fade-in-up">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[#efeded]">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-[#fed65b]/25 text-[#9a4b00]">
+                    <Gift size={24} />
+                  </div>
+                  <h1 className="font-playfair text-3xl md:text-4xl font-bold text-[#180331]">
+                    Gifts &amp; Countdown Control
+                  </h1>
+                  <span className="bg-[#fed65b] text-[#180331] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#ffe088]/40">
+                    Live Reactive
+                  </span>
+                </div>
+                <p className="text-xs text-[#7b757f] mt-1">
+                  Configure the shared gifts collection that displays for all teachers at the same time, set the exact reveal schedule, and customize the Home Page "Coming Soon: Something Big!" countdown box.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await onUpdateSettings(localSettings);
+                      setNotification('✅ Gifts, Exact Reveal Time & Countdown saved successfully!');
+                    } catch {
+                      setNotification('Failed to save settings to Firestore.');
+                    }
+                  }}
+                  className="btn-primary rounded-xl px-6 py-2.5 font-inter text-xs font-bold tracking-wider uppercase flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transition-all"
+                >
+                  <Check size={16} />
+                  <span>Save All Settings</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* LEFT COLUMN: Reveal Timer & Home Countdown */}
+              <div className="lg:col-span-6 space-y-6">
+                {/* 1. Exact Reveal Time Card */}
+                <div className="bg-[#ffffff] rounded-2xl p-6 border border-[#ccc4cf]/40 shadow-xs space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[#fed65b]/30 text-[#9a4b00]">
+                        <Clock size={18} />
+                      </div>
+                      <h3 className="font-playfair text-lg font-bold text-[#180331]">
+                        Exact Gift Reveal Schedule
+                      </h3>
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${
+                      localSettings.giftIsRevealed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {localSettings.giftIsRevealed ? 'Unlocked For Everyone' : 'Locked with Countdown'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[#7b757f]">
+                    Control when faculty members can open their gift book. You can reveal it immediately or lock it with a live ticking countdown until the exact celebration moment.
+                  </p>
+
+                  {/* Immediate vs Scheduled Reveal Toggle */}
+                  <div className="p-3.5 bg-[#fbf9f8] rounded-xl border border-[#efeded]">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.giftIsRevealed ?? true}
+                        onChange={(e) => {
+                          const updated = { ...localSettings, giftIsRevealed: e.target.checked };
+                          setLocalSettings(updated);
+                        }}
+                        className="w-4 h-4 rounded text-[#180331] focus:ring-0 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-[#180331]">
+                        Reveal Gifts Immediately (Unlocked for all teachers now)
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Exact Date & Time Picker */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e] mb-1.5">
+                      Exact Reveal Date &amp; Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={localSettings.giftRevealDateTime || '2026-09-05T10:00'}
+                      onChange={(e) => {
+                        const updated = { ...localSettings, giftRevealDateTime: e.target.value };
+                        setLocalSettings(updated);
+                      }}
+                      className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-4 py-2.5 text-xs text-[#180331] focus:border-[#180331] outline-none"
+                    />
+                    <p className="text-[11px] text-[#7b757f] mt-1">
+                      When "Reveal Immediately" is unchecked, gifts remain locked until this exact timestamp.
+                    </p>
+                  </div>
+
+                  {/* Teaser Message */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e] mb-1.5">
+                      Locked Teaser Message
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={localSettings.giftLockedMessage || ''}
+                      onChange={(e) => {
+                        const updated = { ...localSettings, giftLockedMessage: e.target.value };
+                        setLocalSettings(updated);
+                      }}
+                      placeholder="A Special Gift is arriving for all teachers! Unlocks at the exact scheduled celebration time."
+                      className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl p-3 text-xs text-[#180331] focus:border-[#180331] outline-none resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Home Page Countdown Box Settings */}
+                <div className="bg-[#ffffff] rounded-2xl p-6 border border-[#ccc4cf]/40 shadow-xs space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[#fed65b]/30 text-[#9a4b00]">
+                        <Sparkles size={18} />
+                      </div>
+                      <h3 className="font-playfair text-lg font-bold text-[#180331]">
+                        Home Page Countdown Box
+                      </h3>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={localSettings.showCountdownBox !== false}
+                        onChange={(e) => {
+                          const updated = { ...localSettings, showCountdownBox: e.target.checked };
+                          setLocalSettings(updated);
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#180331]"></div>
+                    </label>
+                  </div>
+
+                  <p className="text-xs text-[#7b757f]">
+                    Displays the high-visibility "Coming Soon: Something Big!" live ticking countdown on the home screen.
+                  </p>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e] mb-1.5">
+                      Countdown Box Title
+                    </label>
+                    <input
+                      type="text"
+                      value={localSettings.countdownTitle ?? 'Coming Soon: Something Big!'}
+                      onChange={(e) => {
+                        const updated = { ...localSettings, countdownTitle: e.target.value };
+                        setLocalSettings(updated);
+                      }}
+                      className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-4 py-2.5 text-xs text-[#180331] focus:border-[#180331] outline-none"
+                    />
+                  </div>
+
+                  {/* Subtitle */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e] mb-1.5">
+                      Subtitle / Event Note
+                    </label>
+                    <input
+                      type="text"
+                      value={localSettings.countdownSubtitle ?? "Teachers' Day Grand Ceremony & Secret Gift Reveal"}
+                      onChange={(e) => {
+                        const updated = { ...localSettings, countdownSubtitle: e.target.value };
+                        setLocalSettings(updated);
+                      }}
+                      className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-4 py-2.5 text-xs text-[#180331] focus:border-[#180331] outline-none"
+                    />
+                  </div>
+
+                  {/* Target Date for Home Countdown */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e] mb-1.5">
+                      Target Countdown Date &amp; Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={localSettings.countdownTargetDate || localSettings.giftRevealDateTime || '2026-09-05T10:00'}
+                      onChange={(e) => {
+                        const updated = { ...localSettings, countdownTargetDate: e.target.value };
+                        setLocalSettings(updated);
+                      }}
+                      className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-4 py-2.5 text-xs text-[#180331] focus:border-[#180331] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Global Shared Gifts Collection */}
+              <div className="lg:col-span-6 space-y-6">
+                <div className="bg-[#ffffff] rounded-2xl p-6 border border-[#ccc4cf]/40 shadow-xs space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-playfair text-lg font-bold text-[#180331]">
+                        Global Shared Gift Book Pages
+                      </h3>
+                      <p className="text-xs text-[#7b757f] mt-0.5">
+                        These images are shown to <strong>every teacher at the same time</strong> in the book scroll viewer.
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold px-3 py-1 bg-[#fed65b]/30 text-[#9a4b00] rounded-full">
+                      {(localSettings.giftImages || DEFAULT_GIFT_IMAGES).length} Pages
+                    </span>
+                  </div>
+
+                  {/* Add URL */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#4a454e]">
+                      Add New Gift Image URL
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="https://... gift, award, or greeting card image"
+                        value={giftImageUrlInput}
+                        onChange={(e) => setGiftImageUrlInput(e.target.value)}
+                        className="flex-grow bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-3 py-2 text-xs focus:border-[#180331] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (giftImageUrlInput.trim()) {
+                            const current = localSettings.giftImages || DEFAULT_GIFT_IMAGES.map((d) => d.url);
+                            const updated = { ...localSettings, giftImages: [...current, giftImageUrlInput.trim()] };
+                            setLocalSettings(updated);
+                            setGiftImageUrlInput('');
+                            setNotification('Added gift page! Click "Save All Settings" to publish.');
+                          }
+                        }}
+                        className="px-4 py-2 bg-[#180331] text-[#ffe088] rounded-xl text-xs font-semibold hover:bg-[#2e1a47] cursor-pointer whitespace-nowrap"
+                      >
+                        Add Page
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Add Presets */}
+                  <div>
+                    <span className="block text-[11px] font-semibold text-[#7b757f] mb-2 uppercase">
+                      Quick Add Celebration Presets:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {DEFAULT_GIFT_IMAGES.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const current = localSettings.giftImages || DEFAULT_GIFT_IMAGES.map((d) => d.url);
+                            if (!current.includes(preset.url)) {
+                              const updated = { ...localSettings, giftImages: [...current, preset.url] };
+                              setLocalSettings(updated);
+                              setNotification(`Added "${preset.label}" to gift book!`);
+                            }
+                          }}
+                          className="flex items-center gap-2 p-2 bg-[#fbf9f8] hover:bg-[#fff9e6] border border-[#e8d8b0] rounded-xl text-left text-xs transition-colors cursor-pointer"
+                        >
+                          <img
+                            src={preset.url}
+                            alt={preset.label}
+                            className="w-8 h-8 rounded-lg object-cover border border-[#e8d8b0]"
+                          />
+                          <span className="truncate font-medium text-[#180331]">{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Current Pages Grid */}
+                  <div>
+                    <span className="block text-xs font-semibold text-[#4a454e] mb-2 uppercase">
+                      Current Book Pages (Turn Order):
+                    </span>
+                    <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto p-3 bg-[#fbf9f8] rounded-2xl border border-[#efeded]">
+                      {(localSettings.giftImages && localSettings.giftImages.length > 0 ? localSettings.giftImages : DEFAULT_GIFT_IMAGES.map(d => d.url)).map((url, idx) => (
+                        <div
+                          key={idx}
+                          className="relative rounded-xl overflow-hidden border-2 border-[#e8d8b0] bg-[#fffdf5] shadow-xs group"
+                          style={{ height: '140px' }}
+                        >
+                          <img
+                            src={url}
+                            alt={`Gift page ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded font-mono font-bold">
+                            p.{idx + 1}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = localSettings.giftImages || DEFAULT_GIFT_IMAGES.map((d) => d.url);
+                              const updated = {
+                                ...localSettings,
+                                giftImages: current.filter((_, i) => i !== idx),
+                              };
+                              setLocalSettings(updated);
+                            }}
+                            className="absolute top-1.5 right-1.5 p-1.5 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+                            title="Remove this page"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3866,6 +4236,140 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       className="w-full bg-[#fbf9f8] border border-[#ccc4cf] rounded-xl px-3 py-2 text-xs focus:border-[#180331] outline-none"
                     />
                   </div>
+                </div>
+
+                {/* 🎁 Gift & Appreciation Images for Book Page Viewer */}
+                <div className="p-4 bg-[#fffdf5] rounded-2xl border-2 border-[#e8d8b0] space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[#fed65b]/30 text-[#9a4b00]">
+                        <Gift size={16} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#180331] uppercase tracking-wider">
+                          Gift & Appreciation Book Pages
+                        </h4>
+                        <p className="text-[11px] text-[#7b757f]">
+                          Images shown as pages in the teacher's interactive book scroll viewer
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#9a4b00] bg-[#fed65b]/30 px-2 py-0.5 rounded-full">
+                      {formGiftImages.length} {formGiftImages.length === 1 ? 'Page' : 'Pages'}
+                    </span>
+                  </div>
+
+                  {/* Preset Gift Templates for Quick Adding */}
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[#7b757f] mb-1.5">
+                      Quick Add Celebration Presets:
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {DEFAULT_GIFT_IMAGES.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            if (!formGiftImages.includes(preset.url)) {
+                              setFormGiftImages([...formGiftImages, preset.url]);
+                              setNotification(`Added "${preset.label}" to gift book! 🎁`);
+                            }
+                          }}
+                          className="flex items-center gap-2 p-1.5 bg-[#ffffff] border border-[#e8d8b0] hover:border-[#9a4b00] rounded-xl text-left text-[11px] hover:bg-[#fff9e6] transition-colors cursor-pointer"
+                        >
+                          <img
+                            src={preset.url}
+                            alt={preset.label}
+                            className="w-7 h-7 rounded-lg object-cover border border-[#e8d8b0]"
+                          />
+                          <span className="truncate font-medium text-[#180331]">{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add by URL input */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#4a454e] mb-1">
+                      Add Custom Gift Image URL
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="https://... image URL (gift, certificate, scroll)"
+                        value={giftImageUrlInput}
+                        onChange={(e) => setGiftImageUrlInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddGiftImageUrl();
+                          }
+                        }}
+                        className="flex-grow bg-[#ffffff] border border-[#ccc4cf] rounded-xl px-3 py-2 text-xs focus:border-[#180331] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddGiftImageUrl}
+                        className="px-4 py-2 bg-[#180331] text-[#ffe088] rounded-xl text-xs font-semibold hover:bg-[#2e1a47] cursor-pointer whitespace-nowrap"
+                      >
+                        Add Page
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Upload Image Button */}
+                  <div>
+                    <input
+                      type="file"
+                      ref={giftFileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, 'gift')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => giftFileInputRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 border border-dashed border-[#b89f70] hover:border-[#180331] rounded-xl text-xs font-semibold text-[#180331] bg-[#ffffff] hover:bg-[#faf5eb] transition-colors cursor-pointer"
+                    >
+                      <Upload size={14} className="text-[#9a4b00]" />
+                      <span>Upload Gift / Certificate Image File</span>
+                    </button>
+                  </div>
+
+                  {/* List of currently added gift pages */}
+                  {formGiftImages.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-[#7b757f]">
+                        Book Pages ({formGiftImages.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-2 p-2 bg-[#ffffff] rounded-xl border border-[#e8d8b0] max-h-40 overflow-y-auto">
+                        {formGiftImages.map((url, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group rounded-lg overflow-hidden border border-[#e8d8b0] bg-[#fdfaf2] shadow-2xs"
+                            style={{ width: '68px', height: '88px' }}
+                          >
+                            <img
+                              src={url}
+                              alt={`Gift page ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded font-mono">
+                              p.{idx + 1}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGiftImage(idx)}
+                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Remove this page"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-6 border-t border-[#efeded] flex items-center justify-end gap-3">

@@ -2,10 +2,11 @@ import React from 'react';
 import { Image as ImageIcon, ArrowRight } from 'lucide-react';
 import { SiteSettings } from '../types';
 import { CrestRenderer } from './CrestRenderer';
+import { CountdownBox } from './CountdownBox';
 
 interface HomeScreenProps {
   settings: SiteSettings;
-  onNavigate: (screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin') => void;
+  onNavigate: (screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin' | 'gift') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ settings, onNavigate }) => {
@@ -98,9 +99,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ settings, onNavigate }) 
           </h1>
 
           {/* Appreciation Quote */}
-          <p className={`font-inter text-base sm:text-lg md:text-xl ${subtextColorClass} mb-10 max-w-2xl italic font-normal leading-relaxed ${isDark ? 'drop-shadow-sm' : ''}`}>
+          <p className={`font-inter text-base sm:text-lg md:text-xl ${subtextColorClass} mb-8 max-w-2xl italic font-normal leading-relaxed ${isDark ? 'drop-shadow-sm' : ''}`}>
             "{settings.heroQuote || 'To the world, you may be just a teacher, but to your students, you are a hero.'}"
           </p>
+
+          {/* ⏳ Home Page Countdown Box ("Coming Soon: Something Big!") */}
+          {settings.showCountdownBox !== false && (
+            <div className="w-full mb-10">
+              <CountdownBox
+                targetDate={settings.countdownTargetDate || settings.giftRevealDateTime || '2026-09-05T10:00'}
+                title={settings.countdownTitle || 'Coming Soon: Something Big!'}
+                subtitle={settings.countdownSubtitle || "Teachers' Day Grand Celebration & Exclusive Gifts Reveal"}
+                isDark={isDark}
+                onExploreGifts={() => onNavigate('gift')}
+              />
+            </div>
+          )}
 
           {/* Action Buttons (Controlled by Admin) */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">

@@ -309,6 +309,7 @@ app.post('/api/teachers', async (req, res) => {
       dateAdded: body.dateAdded || new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       email: body.email || '',
       officeLocation: body.officeLocation || '',
+      giftImages: Array.isArray(body.giftImages) ? body.giftImages : [],
     };
     await db.collection(COL_TEACHERS).doc(id).set(newTeacher);
     res.status(201).json(newTeacher);

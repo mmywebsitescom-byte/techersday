@@ -100,5 +100,17 @@ export interface SiteSettings {
   // Browser Tab Icon & Title (Favicon)
   faviconUrl?: string;
   siteTabTitle?: string;
+
+  // Global Gifts & Reveal System (Applies to all teachers simultaneously)
+  giftImages?: string[]; // Global shared gift images for all teachers
+  giftRevealDateTime?: string; // ISO or local datetime string e.g. "2026-09-05T10:00"
+  giftIsRevealed?: boolean; // Admin override: true to reveal immediately, false to lock until countdown
+  giftLockedMessage?: string; // Message shown while locked e.g. "A surprise gift is arriving for all teachers!"
+
+  // Home Page Countdown Box ("Coming soon something big")
+  showCountdownBox?: boolean;
+  countdownTitle?: string; // e.g. "Coming Soon: Something Big!"
+  countdownSubtitle?: string; // e.g. "Teachers' Day Grand Celebration & Exclusive Gifts"
+  countdownTargetDate?: string; // Target date for countdown e.g. "2026-09-05T10:00"
 }
 

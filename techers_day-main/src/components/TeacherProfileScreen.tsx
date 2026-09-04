@@ -16,15 +16,20 @@ import {
   ChevronRight,
   X,
   Sparkles,
+  Lock,
+  Timer,
+  PartyPopper,
 } from 'lucide-react';
-import { Teacher, CelebrationEvent } from '../types';
+import { Teacher, CelebrationEvent, SiteSettings } from '../types';
 import { Footer } from './Footer';
 import { downloadImageFile } from '../utils/downloadUtils';
+import { calculateTimeLeft, TimeLeft } from '../utils/countdownUtils';
 
 interface TeacherProfileScreenProps {
   teacher: Teacher;
   allTeachers: Teacher[];
   eventInfo: CelebrationEvent;
+  settings?: SiteSettings;
   onNavigate: (screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin') => void;
   onSelectTeacher: (teacher: Teacher) => void;
   onOpenRSVP: (teacher?: Teacher) => void;
@@ -207,19 +212,46 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
   teacher,
   allTeachers,
   eventInfo,
+  settings,
   onNavigate,
   onSelectTeacher,
   onOpenRSVP,
   onBackToDepartment,
 }) => {
   const [isGiftViewerOpen, setIsGiftViewerOpen] = useState(false);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
 
   // Find current teacher index for next/prev navigation
   const currentIndex = allTeachers.findIndex((t) => t.id === teacher.id);
   const prevTeacher = currentIndex > 0 ? allTeachers[currentIndex - 1] : allTeachers[allTeachers.length - 1];
   const nextTeacher = currentIndex < allTeachers.length - 1 ? allTeachers[currentIndex + 1] : allTeachers[0];
 
-  const giftImages = teacher.giftImages?.filter((url) => url && url.trim() !== '') || [];
+  // Shared Gifts: Priority = custom teacher gifts > global settings gifts > default presets
+  const globalGifts = (settings?.giftImages || []).filter((url) => url && url.trim() !== '');
+  const customGifts = (teacher.giftImages || []).filter((url) => url && url.trim() !== '');
+  const defaultGiftUrls = [
+    'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1000&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1000&auto=format&fit=crop&q=80',
+  ];
+  const displayGiftImages =
+    customGifts.length > 0 ? customGifts : globalGifts.length > 0 ? globalGifts : defaultGiftUrls;
+
+  // Reveal Schedule & Timer Logic
+  const revealTargetDate = settings?.giftRevealDateTime || '2026-09-05T10:00';
+  const [revealTimeLeft, setRevealTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft(revealTargetDate));
+
+  useEffect(() => {
+    setRevealTimeLeft(calculateTimeLeft(revealTargetDate));
+    const timer = setInterval(() => {
+      setRevealTimeLeft(calculateTimeLeft(revealTargetDate));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [revealTargetDate]);
+
+  // Is revealed if admin explicitly unlocked (settings.giftIsRevealed !== false) OR if target time has arrived
+  const isGiftRevealed = settings?.giftIsRevealed === true || revealTimeLeft.isExpired;
 
   // Card Theme Presets
   const themeStyles = {
@@ -277,12 +309,91 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[#fbf9f8] text-[#1b1c1c]">
       {/* Gift Book Viewer Overlay */}
-      {isGiftViewerOpen && giftImages.length > 0 && (
+      {isGiftViewerOpen && displayGiftImages.length > 0 && (
         <GiftBookViewer
-          images={giftImages}
+          images={displayGiftImages}
           teacherName={teacher.name}
           onClose={() => setIsGiftViewerOpen(false)}
         />
+      )}
+
+      {/* 🔒 Locked Gift Countdown Modal (Shown when clicked before reveal time) */}
+      {isLockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-[#ffffff] max-w-md w-full rounded-3xl p-6 sm:p-8 relative shadow-2xl border-2 border-[#ffe088] text-center">
+            <button
+              onClick={() => setIsLockModalOpen(false)}
+              className="absolute top-4 right-4 p-2 text-[#7b757f] hover:text-[#180331] rounded-full hover:bg-[#f5f3f3] transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-16 h-16 rounded-full bg-[#fed65b]/20 border-2 border-[#ffe088] flex items-center justify-center mx-auto mb-4 text-[#9a4b00] shadow-sm animate-pulse">
+              <Lock size={30} />
+            </div>
+
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#9a4b00] bg-[#fed65b]/30 px-3 py-1 rounded-full border border-[#ffe088]/60 inline-block mb-3">
+              Special Gift Locked
+            </span>
+
+            <h3 className="font-playfair text-2xl font-bold text-[#180331] mb-2">
+              A Special Surprise Awaits!
+            </h3>
+
+            <p className="text-xs text-[#7b757f] mb-6 max-w-xs mx-auto leading-relaxed">
+              {settings?.giftLockedMessage ||
+                'A special gift and appreciation book is being prepared for all teachers! It will automatically reveal at the exact scheduled celebration time.'}
+            </p>
+
+            {/* Live Ticking Countdown */}
+            <div className="grid grid-cols-4 gap-2 mb-5 p-3 rounded-2xl bg-[#fffdf5] border border-[#e8d8b0]">
+              <div className="flex flex-col items-center">
+                <span className="font-playfair text-xl font-bold text-[#180331] tabular-nums">
+                  {revealTimeLeft.days.toString().padStart(2, '0')}
+                </span>
+                <span className="text-[9px] uppercase text-[#735c00] font-semibold">Days</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-playfair text-xl font-bold text-[#180331] tabular-nums">
+                  {revealTimeLeft.hours.toString().padStart(2, '0')}
+                </span>
+                <span className="text-[9px] uppercase text-[#735c00] font-semibold">Hours</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-playfair text-xl font-bold text-[#180331] tabular-nums">
+                  {revealTimeLeft.minutes.toString().padStart(2, '0')}
+                </span>
+                <span className="text-[9px] uppercase text-[#735c00] font-semibold">Mins</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-playfair text-xl font-bold text-[#9a4b00] tabular-nums animate-pulse">
+                  {revealTimeLeft.seconds.toString().padStart(2, '0')}
+                </span>
+                <span className="text-[9px] uppercase text-[#9a4b00] font-semibold">Secs</span>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-[#735c00] font-medium flex items-center justify-center gap-1.5 mb-5">
+              <Clock size={13} />
+              <span>
+                Exact Reveal Time: {new Date(revealTargetDate).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsLockModalOpen(false)}
+              className="w-full py-3 bg-[#180331] text-[#ffe088] font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-[#2e1a47] transition-all cursor-pointer shadow-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
 
       <main className="flex-grow pt-24 sm:pt-28 pb-20 px-5 md:px-8 max-w-[1200px] mx-auto w-full">
@@ -390,31 +501,48 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
               )}
             </div>
 
-            {/* Download Portrait only (invitation URL button removed) */}
-            <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start pt-1">
+            {/* Action Buttons: Download Portrait & View Gift */}
+            <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start pt-2">
+              {/* 🎁 "View Gift" Button — Unlocked or Locked Countdown */}
+              {isGiftRevealed ? (
+                <button
+                  type="button"
+                  id="view-gift-button"
+                  onClick={() => setIsGiftViewerOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#fed65b] via-[#ffe088] to-[#fcd34d] hover:from-[#fcd34d] hover:to-[#fed65b] text-[#241a00] rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-[#f59e0b]/50 group"
+                  title="View Gift for Faculty Member"
+                >
+                  <Gift size={16} className="text-[#9a4b00] group-hover:rotate-12 transition-transform duration-300" />
+                  <span>View Gift</span>
+                  <span className="bg-[#241a00]/10 text-[#241a00] text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    {displayGiftImages.length}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  id="view-gift-button"
+                  onClick={() => setIsLockModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#fff8e7] to-[#fed65b]/30 hover:from-[#fed65b]/40 hover:to-[#fff8e7] text-[#180331] rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-[#ffe088] group"
+                  title="Gift locked until scheduled ceremony time"
+                >
+                  <Lock size={15} className="text-[#9a4b00] animate-bounce-short" />
+                  <span>
+                    Locked • Reveals in {revealTimeLeft.days > 0 ? `${revealTimeLeft.days}d ` : ''}
+                    {revealTimeLeft.hours.toString().padStart(2, '0')}:{revealTimeLeft.minutes.toString().padStart(2, '0')}:{revealTimeLeft.seconds.toString().padStart(2, '0')}
+                  </span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => downloadImageFile(teacher.photoUrl, `${teacher.name.replace(/\s+/g, '-')}-portrait.jpg`)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#ffffff] border border-[#ccc4cf] hover:border-[#180331] text-[#180331] rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-[#ffffff] border border-[#ccc4cf] hover:border-[#180331] text-[#180331] rounded-xl text-xs font-semibold shadow-2xs hover:bg-[#f5f3f3] transition-colors cursor-pointer"
                 title="Download Faculty Portrait"
               >
                 <Download size={13} />
                 Download Portrait
               </button>
-
-              {/* 🎁 Open Gift Button (only shows if admin added gift images) */}
-              {giftImages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsGiftViewerOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#fed65b] to-[#ffe088] text-[#241a00] rounded-xl text-xs font-bold shadow-md hover:scale-105 hover:shadow-lg transition-all cursor-pointer border border-[#ffe088]/50 animate-pulse"
-                  title="Open your gift!"
-                  style={{ animationDuration: '2.5s' }}
-                >
-                  <Gift size={15} />
-                  Open Gift ({giftImages.length} {giftImages.length === 1 ? 'page' : 'pages'})
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -436,41 +564,51 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
           </div>
         </div>
 
-        {/* 🎁 Gift Section (Inline preview strip, shown always if gifts exist) */}
-        {giftImages.length > 0 && (
+        {/* 🎁 Gift Section (Always shown with interactive paper-scroll look) */}
+        {displayGiftImages.length > 0 && (
           <div className="mt-14 md:mt-16 animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#fed65b]/20 text-[#180331]">
-                  <Gift size={20} />
+                <div className="p-2 rounded-xl bg-[#fed65b]/25 text-[#180331] shadow-2xs border border-[#ffe088]/50">
+                  {isGiftRevealed ? <Gift size={20} className="text-[#9a4b00]" /> : <Lock size={20} className="text-[#9a4b00]" />}
                 </div>
                 <div>
-                  <h2 className="font-playfair text-2xl text-[#180331] font-bold">
-                    Gifts & Appreciation
+                  <h2 className="font-playfair text-2xl sm:text-3xl text-[#180331] font-bold">
+                    Gift &amp; Appreciation Book
                   </h2>
                   <p className="text-xs text-[#7b757f] mt-0.5">
-                    {giftImages.length} special {giftImages.length === 1 ? 'message' : 'messages'} — click any to open the full book viewer
+                    {isGiftRevealed
+                      ? `${displayGiftImages.length} page${displayGiftImages.length === 1 ? '' : 's'} honoring ${teacher.name} — click to open the page scroll`
+                      : `A surprise gift collection is arriving for all teachers! Unlocks at exact ceremony time.`}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => setIsGiftViewerOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#180331] text-[#ffe088] rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#2e1a47] shadow-md transition-all cursor-pointer"
+                onClick={() => (isGiftRevealed ? setIsGiftViewerOpen(true) : setIsLockModalOpen(true))}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer ${
+                  isGiftRevealed
+                    ? 'bg-[#180331] text-[#ffe088] hover:bg-[#2e1a47]'
+                    : 'bg-[#fff8e7] text-[#9a4b00] border border-[#ffe088]'
+                }`}
               >
-                <Gift size={14} />
-                Open All
+                {isGiftRevealed ? <Gift size={14} /> : <Timer size={14} />}
+                {isGiftRevealed ? 'Open Book' : 'View Countdown'}
               </button>
             </div>
 
-            {/* Horizontal scroll thumbnail strip of gift images (paper/book look) */}
+            {/* Horizontal scroll thumbnail strip of gift images */}
             <div className="relative">
-              <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory"
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory pt-1"
                 style={{ scrollbarWidth: 'thin', scrollbarColor: '#ffe088 #f0e8ff' }}>
-                {giftImages.map((imgUrl, idx) => (
+                {displayGiftImages.map((imgUrl, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
-                      setIsGiftViewerOpen(true);
+                      if (isGiftRevealed) {
+                        setIsGiftViewerOpen(true);
+                      } else {
+                        setIsLockModalOpen(true);
+                      }
                     }}
                     className="flex-shrink-0 snap-start relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group"
                     style={{
@@ -479,7 +617,7 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
                       background: '#fffdf5',
                       border: '2.5px solid #e8d8b0',
                     }}
-                    title={`Gift page ${idx + 1} — click to open`}
+                    title={isGiftRevealed ? `Gift page ${idx + 1} — click to open` : `Locked — click to view countdown timer`}
                   >
                     {/* Paper lines */}
                     <div className="absolute inset-0 pointer-events-none opacity-10 z-0"
@@ -494,18 +632,33 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
                     <img
                       src={imgUrl}
                       alt={`Gift ${idx + 1}`}
-                      className="w-full h-full object-cover relative z-5"
+                      className={`w-full h-full object-cover relative z-5 transition-all duration-300 ${
+                        !isGiftRevealed ? 'blur-xs scale-105' : ''
+                      }`}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
                           'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&auto=format&fit=crop&q=80';
                       }}
                     />
 
+                    {/* Lock overlay if not revealed */}
+                    {!isGiftRevealed && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-15 flex flex-col items-center justify-center text-white p-2">
+                        <Lock size={24} className="text-[#ffe088] mb-1.5 drop-shadow" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffe088] text-center">
+                          Secret Gift
+                        </span>
+                        <span className="text-[9px] text-white/80 text-center mt-0.5">
+                          Reveals at ceremony
+                        </span>
+                      </div>
+                    )}
+
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-[#180331]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
                       <span className="text-[#ffe088] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
-                        <Gift size={14} />
-                        Open Gift
+                        {isGiftRevealed ? <Gift size={14} /> : <Lock size={14} />}
+                        {isGiftRevealed ? 'Open Gift' : 'View Timer'}
                       </span>
                     </div>
 
