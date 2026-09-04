@@ -6,7 +6,7 @@ import { CountdownBox } from './CountdownBox';
 
 interface HomeScreenProps {
   settings: SiteSettings;
-  onNavigate: (screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin' | 'gift') => void;
+  onNavigate: (screen: 'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ settings, onNavigate }) => {
@@ -111,7 +111,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ settings, onNavigate }) 
                 title={settings.countdownTitle || 'Coming Soon: Something Big!'}
                 subtitle={settings.countdownSubtitle || "Teachers' Day Grand Celebration & Exclusive Gifts Reveal"}
                 isDark={isDark}
-                onExploreGifts={() => onNavigate('gift')}
               />
             </div>
           )}
