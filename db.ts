@@ -2,28 +2,32 @@ import pg from 'pg';
 import { INITIAL_SITE_SETTINGS, INITIAL_EVENT } from './src/data/initialData';
 import { Teacher, Department, GalleryItem, RSVPRecord, SiteSettings, CelebrationEvent } from './src/types';
 
-const { Pool } = pg;
+let _pool: pg.Pool | null = null;
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error(
-    '[db.ts] DATABASE_URL environment variable is not set. ' +
-    'Add it in Vercel → Project Settings → Environment Variables.'
-  );
+export function getPool(): pg.Pool {
+  if (_pool) return _pool;
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      '[db.ts] DATABASE_URL environment variable is not set. ' +
+      'Add it in Vercel → Project Settings → Environment Variables.'
+    );
+  }
+  _pool = new pg.Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 1,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
+  });
+  return _pool;
 }
 
-export const pool = new Pool({
-  connectionString,
-  ssl: {
-    rejectUnauthorized: false,
+// Backwards-compatible export so existing code using `pool` still works
+export const pool = new Proxy({} as pg.Pool, {
+  get(_target, prop) {
+    return (getPool() as any)[prop];
   },
-  // ⚠️ CRITICAL for Vercel Serverless:
-  // Each serverless invocation is a separate process.
-  // max:1 lets PgBouncer (Supabase shared pooler) handle multiplexing.
-  // max:10 would open 10 connections PER invocation → 500+ connections → crash.
-  max: 1,
-  idleTimeoutMillis: 10000,        // release connection after 10s idle
-  connectionTimeoutMillis: 5000,   // fail fast (5s) instead of hanging forever
 });
 
 // ─── Settings Helpers ────────────────────────────────────────────────────────
