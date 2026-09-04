@@ -43,6 +43,19 @@ export const DepartmentSelectScreen: React.FC<DepartmentSelectScreenProps> = ({
         </header>
 
         {/* Interactive Grid matching Screenshot 1 */}
+        {departments.length === 0 ? (
+          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative z-10">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="w-full min-h-[120px] md:min-h-[140px] rounded-2xl p-6 bg-white/80 border border-[#ccc4cf]/40 shadow-xs flex items-center justify-between">
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="w-48 h-6 rounded-md skeleton-shimmer" />
+                  <div className="w-28 h-4 rounded-md skeleton-shimmer" />
+                </div>
+                <div className="w-10 h-10 rounded-full skeleton-shimmer shrink-0" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative z-10">
           {departments.map((dept, index) => {
             const isLastOdd = index === departments.length - 1 && departments.length % 2 !== 0;
@@ -80,6 +93,7 @@ export const DepartmentSelectScreen: React.FC<DepartmentSelectScreenProps> = ({
             );
           })}
         </div>
+        )}
 
         {/* Quick Teacher Directory Drawer / Preview */}
         <div className="w-full max-w-4xl mt-12 pt-8 border-t border-[#ccc4cf]/30 text-center">

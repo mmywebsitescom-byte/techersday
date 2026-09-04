@@ -107,7 +107,27 @@ export const DepartmentFacultyScreen: React.FC<DepartmentFacultyScreenProps> = (
         </div>
 
         {/* Teachers Grid - Spacious 2-Column Layout */}
-        {filteredTeachers.length > 0 ? (
+        {teachers.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-3xl border border-[#ccc4cf]/40 p-7 sm:p-8 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-20 h-20 rounded-full skeleton-shimmer shrink-0" />
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="w-40 h-6 rounded-md skeleton-shimmer" />
+                    <div className="w-28 h-4 rounded-md skeleton-shimmer" />
+                    <div className="w-32 h-3.5 rounded-md skeleton-shimmer" />
+                  </div>
+                </div>
+                <div className="w-full h-12 rounded-xl skeleton-shimmer mb-4" />
+                <div className="flex gap-2">
+                  <div className="w-20 h-6 rounded-full skeleton-shimmer" />
+                  <div className="w-24 h-6 rounded-full skeleton-shimmer" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredTeachers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
             {filteredTeachers.map((teacher) => (
               <div

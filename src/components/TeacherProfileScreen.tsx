@@ -250,8 +250,8 @@ export const TeacherProfileScreen: React.FC<TeacherProfileScreenProps> = ({
     return () => clearInterval(timer);
   }, [revealTargetDate]);
 
-  // Is revealed if admin explicitly unlocked (settings.giftIsRevealed !== false) OR if target time has arrived
-  const isGiftRevealed = settings?.giftIsRevealed === true || revealTimeLeft.isExpired;
+  // Gifts stay strictly LOCKED until the exact countdown timer expires
+  const isGiftRevealed = settings?.giftIsRevealed !== false && revealTimeLeft.isExpired;
 
   // Card Theme Presets
   const themeStyles = {

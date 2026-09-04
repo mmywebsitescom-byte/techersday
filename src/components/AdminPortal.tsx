@@ -217,7 +217,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       if (onUpdateEvent) {
         await onUpdateEvent(localEvent);
       }
-      setNotification('Ceremony invitation card settings saved to Firebase! ✨');
+      setNotification('Ceremony invitation card settings saved to Supabase! ✨');
     } catch (err) {
       setNotification('Failed to save invitation settings. Please try again.');
     } finally {
@@ -553,7 +553,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     img.src = galleryFormImageUrl;
   };
 
-  // Automatic Image Compressor to ensure Firestore 1MB doc size safety
+  // Automatic Image Compressor to ensure Supabase 1MB payload size safety
   const compressImage = (file: File, maxWidth = 1280, maxHeight = 900, quality = 0.8): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -627,7 +627,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         };
         setLocalSettings(updated);
         onUpdateSettings(updated);
-        setNotification(`Custom Home Page Logo updated and saved to Firestore! ✨`);
+        setNotification(`Custom Home Page Logo updated and saved to Supabase! ✨`);
       } else if (target === 'wallpaper') {
         const updated = {
           ...localSettings,
@@ -636,7 +636,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         };
         setLocalSettings(updated);
         onUpdateSettings(updated);
-        setNotification(`Wallpaper updated and saved to Firestore! ✨`);
+        setNotification(`Wallpaper updated and saved to Supabase! ✨`);
       } else if (target === 'favicon') {
         const updated = {
           ...localSettings,
@@ -1564,7 +1564,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                       await onUpdateSettings(localSettings);
                       setNotification('✅ Gifts, Exact Reveal Time & Countdown saved successfully!');
                     } catch {
-                      setNotification('Failed to save settings to Firestore.');
+                      setNotification('Failed to save settings to Supabase.');
                     }
                   }}
                   className="btn-primary rounded-xl px-6 py-2.5 font-inter text-xs font-bold tracking-wider uppercase flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transition-all"
@@ -2874,12 +2874,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                               const url = localSettings.faviconUrl;
                               link.href = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
                               document.head.appendChild(link);
-                              // Persist to Firestore immediately
+                              // Persist to Supabase immediately
                               try {
                                 await onUpdateSettings(localSettings);
                                 setNotification('✅ Tab Icon saved and applied to browser tab!');
                               } catch {
-                                setNotification('Tab icon applied locally but failed to save to Firestore.');
+                                setNotification('Tab icon applied locally but failed to save to Supabase.');
                               }
                             } else {
                               setNotification('Paste or pick an icon URL first.');
@@ -2911,7 +2911,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                                 link.type = 'image/png';
                                 link.href = `${fav.url}${fav.url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
                                 document.head.appendChild(link);
-                                // Save immediately to Firestore
+                                // Save immediately to Supabase
                                 try {
                                   await onUpdateSettings(updated);
                                   setNotification(`✅ "${fav.label}" tab icon applied and saved!`);

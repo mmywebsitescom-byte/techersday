@@ -7,18 +7,59 @@ import { TeacherProfileScreen } from './components/TeacherProfileScreen';
 import { GalleryScreen } from './components/GalleryScreen';
 import { AdminPortal } from './components/AdminPortal';
 import { RSVPModal } from './components/RSVPModal';
+import { SkeletonLoader } from './components/SkeletonLoader';
 import { Teacher, Department, GalleryItem, RSVPRecord, CelebrationEvent, SiteSettings } from './types';
 import {
-  INITIAL_DEPARTMENTS,
-  INITIAL_GALLERY,
-  INITIAL_TEACHERS,
-  INITIAL_EVENT,
-  INITIAL_SITE_SETTINGS,
-} from './data/initialData';
+  CACHE_KEYS,
+  CACHE_TTL,
+  cacheGet,
+  cacheSet,
+  cacheSnapshot,
+  cacheClearAll,
+  isCacheFresh,
+} from './utils/localCache';
+
+const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  institutionName: "Excellence Institute",
+  heroTagline: "Honoring the Architects of Our Future",
+  heroTitle: "Happy Teachers' Day",
+  heroQuote: "To the world, you may be just a teacher, but to your students, you are a hero.",
+  heroQuoteAuthor: "Annual Ceremony 2026",
+  crestType: 'default-crest',
+  customCrestImageUrl: '',
+  badgeIcon: 'sparkles',
+  showSparkleBadge: true,
+  crestBorderGlow: 'gold',
+  crestSize: 'medium',
+  backgroundMode: 'gradient',
+  bgImageUrl: '',
+  bgImageOpacity: 85,
+  bgBlur: 0,
+  bgOverlayColor: '#fbf9f8',
+  bgOverlayOpacity: 20,
+  bgGradientStyle: 'subtle-purple',
+  galleryButtonText: "GALLERY",
+  galleryButtonVisible: true,
+  departmentsButtonText: "SELECT YOUR DEPARTMENT",
+  departmentsButtonVisible: true,
+  rsvpButtonText: "RSVP NOW",
+  rsvpButtonVisible: false,
+  giftIsRevealed: false,
+  giftRevealDateTime: '2026-09-05T14:30',
+};
+
+const DEFAULT_EVENT: CelebrationEvent = {
+  title: "Teachers' Day Celebration 2026",
+  date: "5 Sept 2026",
+  time: "10:00 AM",
+  venue: "College Auditorium",
+  year: "2026",
+  invitationNote: "Join us in celebrating the faculty mentors who shape tomorrow's innovators.",
+};
 
 export function App() {
   // Parse route and identifiers from URL
-  const parseCurrentUrl = (teachersList: Teacher[], deptsList: Department[]) => {
+  const parseCurrentUrl = (teachersList: Teacher[] = [], deptsList: Department[] = []) => {
     const path = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
 
@@ -27,7 +68,7 @@ export function App() {
     const queryTeacherId = searchParams.get('teacher') || searchParams.get('id');
     const targetTeacherId = teacherMatch ? decodeURIComponent(teacherMatch[1]) : queryTeacherId;
 
-    if (targetTeacherId) {
+    if (targetTeacherId && teachersList.length > 0) {
       const foundTeacher = teachersList.find(
         (t) => t.id.toLowerCase() === targetTeacherId.toLowerCase()
       );
@@ -48,7 +89,7 @@ export function App() {
     const queryDeptId = searchParams.get('dept');
     const targetDeptId = deptMatch ? decodeURIComponent(deptMatch[1]) : queryDeptId;
 
-    if (targetDeptId && targetDeptId !== 'departments') {
+    if (targetDeptId && targetDeptId !== 'departments' && deptsList.length > 0) {
       const foundDept = deptsList.find(
         (d) => d.id.toLowerCase() === targetDeptId.toLowerCase() || d.code.toLowerCase() === targetDeptId.toLowerCase()
       );
@@ -69,25 +110,20 @@ export function App() {
     return { screen: 'home' as const, teacher: null, dept: null };
   };
 
-  const initialParsed = parseCurrentUrl(INITIAL_TEACHERS, INITIAL_DEPARTMENTS);
-
-  const [currentScreen, setCurrentScreenRaw] = useState<'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin'>(initialParsed.screen);
-  const [teachers, setTeachers] = useState<Teacher[]>(INITIAL_TEACHERS);
-  const [departments, setDepartments] = useState<Department[]>(INITIAL_DEPARTMENTS);
-  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentScreen, setCurrentScreenRaw] = useState<'home' | 'departments' | 'department-teachers' | 'teacher' | 'gallery' | 'admin'>('home');
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [rsvps, setRsvps] = useState<RSVPRecord[]>([]);
-  const [eventInfo, setEventInfo] = useState<CelebrationEvent>(INITIAL_EVENT);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
+  const [eventInfo, setEventInfo] = useState<CelebrationEvent>(DEFAULT_EVENT);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   
   // Selected department for faculty list view
-  const [selectedDepartment, setSelectedDepartment] = useState<Department>(
-    initialParsed.dept || INITIAL_DEPARTMENTS[4] || INITIAL_DEPARTMENTS[0]
-  );
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   
   // Selected teacher for profile view
-  const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(
-    initialParsed.teacher || INITIAL_TEACHERS[0]
-  );
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   // RSVP Modal
   const [isRSVPModalOpen, setIsRSVPModalOpen] = useState(false);
@@ -130,9 +166,40 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePop);
   }, [teachers, departments]);
 
-  // Fetch initial data from backend API
+  // ─── Data Loading: localStorage cache → Supabase API ───────────────────────
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
+      // ── Step 1: Try localStorage cache first ──────────────────────────────
+      if (isCacheFresh()) {
+        const cachedTeachers = cacheGet<Teacher[]>(CACHE_KEYS.teachers);
+        const cachedDepts = cacheGet<Department[]>(CACHE_KEYS.departments);
+        const cachedGallery = cacheGet<GalleryItem[]>(CACHE_KEYS.gallery);
+        const cachedRsvps = cacheGet<RSVPRecord[]>(CACHE_KEYS.rsvps, CACHE_TTL.ADMIN);
+        const cachedEvent = cacheGet<CelebrationEvent>(CACHE_KEYS.event);
+        const cachedSettings = cacheGet<SiteSettings>(CACHE_KEYS.settings);
+
+        if (cachedTeachers && cachedTeachers.length > 0 && cachedDepts && cachedDepts.length > 0) {
+          setTeachers(cachedTeachers);
+          setDepartments(cachedDepts);
+          if (cachedGallery) setGalleryItems(cachedGallery);
+          if (cachedRsvps) setRsvps(cachedRsvps);
+          if (cachedEvent) setEventInfo(cachedEvent);
+          if (cachedSettings) setSiteSettings(cachedSettings);
+
+          const resolved = parseCurrentUrl(cachedTeachers, cachedDepts);
+          if (resolved.teacher) setSelectedTeacher(resolved.teacher);
+          else setSelectedTeacher(cachedTeachers[0] || null);
+
+          if (resolved.dept) setSelectedDepartment(resolved.dept);
+          else setSelectedDepartment(cachedDepts[0] || null);
+
+          setCurrentScreenRaw(resolved.screen);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // ── Step 2: Fetch fresh data from Supabase ────────────────────────────
       try {
         const [teachersRes, deptsRes, galleryRes, rsvpRes, eventRes, settingsRes] = await Promise.allSettled([
           fetch('/api/teachers').then((r) => r.json()),
@@ -143,61 +210,68 @@ export function App() {
           fetch('/api/site-settings').then((r) => r.json()),
         ]);
 
-        let loadedTeachers = INITIAL_TEACHERS;
-        let loadedDepts = INITIAL_DEPARTMENTS;
+        let loadedTeachers: Teacher[] = [];
+        let loadedDepts: Department[] = [];
+        let loadedGallery: GalleryItem[] = [];
+        let loadedRsvps: RSVPRecord[] = [];
+        let loadedEvent = DEFAULT_EVENT;
+        let loadedSettings = DEFAULT_SITE_SETTINGS;
 
-        if (teachersRes.status === 'fulfilled' && Array.isArray(teachersRes.value) && teachersRes.value.length > 0) {
+        if (teachersRes.status === 'fulfilled' && Array.isArray(teachersRes.value)) {
           loadedTeachers = teachersRes.value;
           setTeachers(loadedTeachers);
         }
-
-        if (deptsRes.status === 'fulfilled' && Array.isArray(deptsRes.value) && deptsRes.value.length > 0) {
+        if (deptsRes.status === 'fulfilled' && Array.isArray(deptsRes.value)) {
           loadedDepts = deptsRes.value;
           setDepartments(loadedDepts);
         }
-
-        // Re-resolve active route with live data
-        const resolved = parseCurrentUrl(loadedTeachers, loadedDepts);
-        if (resolved.teacher) {
-          setSelectedTeacher(resolved.teacher);
-        } else if (loadedTeachers.length > 0) {
-          setSelectedTeacher(loadedTeachers[0]);
-        }
-
-        if (resolved.dept) {
-          setSelectedDepartment(resolved.dept);
-        } else if (loadedDepts.length > 0) {
-          setSelectedDepartment(loadedDepts[0]);
-        }
-
-        if (resolved.screen !== 'home' || window.location.pathname !== '/') {
-          setCurrentScreenRaw(resolved.screen);
-        }
-
         if (galleryRes.status === 'fulfilled' && Array.isArray(galleryRes.value)) {
-          setGalleryItems(galleryRes.value);
+          loadedGallery = galleryRes.value;
+          setGalleryItems(loadedGallery);
         }
-
         if (rsvpRes.status === 'fulfilled' && Array.isArray(rsvpRes.value)) {
-          setRsvps(rsvpRes.value);
+          loadedRsvps = rsvpRes.value;
+          setRsvps(loadedRsvps);
         }
-
         if (eventRes.status === 'fulfilled' && eventRes.value?.title) {
-          setEventInfo(eventRes.value);
+          loadedEvent = eventRes.value;
+          setEventInfo(loadedEvent);
+        }
+        if (settingsRes.status === 'fulfilled' && settingsRes.value?.heroTitle) {
+          loadedSettings = settingsRes.value;
+          setSiteSettings(loadedSettings);
         }
 
-        if (settingsRes.status === 'fulfilled' && settingsRes.value?.heroTitle) {
-          setSiteSettings(settingsRes.value);
-        }
+        // Re-resolve active route with Supabase data
+        const resolved = parseCurrentUrl(loadedTeachers, loadedDepts);
+        if (resolved.teacher) setSelectedTeacher(resolved.teacher);
+        else if (loadedTeachers.length > 0) setSelectedTeacher(loadedTeachers[0]);
+
+        if (resolved.dept) setSelectedDepartment(resolved.dept);
+        else if (loadedDepts.length > 0) setSelectedDepartment(loadedDepts[0]);
+
+        setCurrentScreenRaw(resolved.screen);
+
+        // Save to cache for instant future loads
+        cacheSnapshot({
+          teachers: loadedTeachers,
+          departments: loadedDepts,
+          gallery: loadedGallery,
+          rsvps: loadedRsvps,
+          event: loadedEvent,
+          settings: loadedSettings,
+        });
       } catch (err) {
-        console.warn('Using local fallback data while server connects', err);
+        console.error('[Supabase] Failed to fetch data:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchData();
+    loadData();
   }, []);
 
-  // Sync browser Tab Icon (Favicon) & Document Title from Firestore settings
+  // Sync browser Tab Icon (Favicon) & Document Title from Supabase settings
   useEffect(() => {
     if (siteSettings.siteTabTitle) {
       document.title = siteSettings.siteTabTitle;
@@ -259,6 +333,7 @@ export function App() {
       if (res.ok) {
         const saved = await res.json();
         setEventInfo(saved);
+        cacheSet(CACHE_KEYS.event, saved); // update cache
       }
     } catch (err) {
       console.error('Failed to save event info to server:', err);
@@ -275,14 +350,22 @@ export function App() {
       });
       if (!res.ok) throw new Error('Failed to create teacher');
       const savedTeacher = await res.json();
-      setTeachers((prev) => [savedTeacher, ...prev]);
+      setTeachers((prev) => {
+        const updated = [savedTeacher, ...prev];
+        cacheSet(CACHE_KEYS.teachers, updated); // update cache
+        return updated;
+      });
     } catch (err) {
       const local: Teacher = {
         ...newTeacherData,
         id: `teacher-${Date.now()}`,
         dateAdded: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       };
-      setTeachers((prev) => [local, ...prev]);
+      setTeachers((prev) => {
+        const updated = [local, ...prev];
+        cacheSet(CACHE_KEYS.teachers, updated);
+        return updated;
+      });
     }
   };
 
@@ -295,12 +378,18 @@ export function App() {
       });
       if (!res.ok) throw new Error('Failed to update teacher');
       const savedTeacher = await res.json();
-      setTeachers((prev) => prev.map((t) => (t.id === id ? savedTeacher : t)));
+      setTeachers((prev) => {
+        const updated = prev.map((t) => (t.id === id ? savedTeacher : t));
+        cacheSet(CACHE_KEYS.teachers, updated); // update cache
+        return updated;
+      });
       if (selectedTeacher.id === id) setSelectedTeacher(savedTeacher);
     } catch (err) {
-      setTeachers((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...updatedData } : t))
-      );
+      setTeachers((prev) => {
+        const updated = prev.map((t) => (t.id === id ? { ...t, ...updatedData } : t));
+        cacheSet(CACHE_KEYS.teachers, updated);
+        return updated;
+      });
       if (selectedTeacher.id === id) {
         setSelectedTeacher((prev) => ({ ...prev, ...updatedData }));
       }
@@ -313,7 +402,11 @@ export function App() {
     } catch (err) {
       console.warn(err);
     }
-    setTeachers((prev) => prev.filter((t) => t.id !== id));
+    setTeachers((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      cacheSet(CACHE_KEYS.teachers, updated); // update cache
+      return updated;
+    });
   };
 
   const handleAddGallery = async (newItem: Omit<GalleryItem, 'id'>) => {
@@ -325,13 +418,18 @@ export function App() {
       });
       if (!res.ok) throw new Error('Failed to post memory');
       const saved = await res.json();
-      setGalleryItems((prev) => [saved, ...prev]);
+      setGalleryItems((prev) => {
+        const updated = [saved, ...prev];
+        cacheSet(CACHE_KEYS.gallery, updated); // update cache
+        return updated;
+      });
     } catch (err) {
-      const local: GalleryItem = {
-        ...newItem,
-        id: `gallery-${Date.now()}`,
-      };
-      setGalleryItems((prev) => [local, ...prev]);
+      const local: GalleryItem = { ...newItem, id: `gallery-${Date.now()}` };
+      setGalleryItems((prev) => {
+        const updated = [local, ...prev];
+        cacheSet(CACHE_KEYS.gallery, updated);
+        return updated;
+      });
     }
   };
 
@@ -344,11 +442,17 @@ export function App() {
       });
       if (!res.ok) throw new Error('Failed to update gallery memory');
       const saved = await res.json();
-      setGalleryItems((prev) => prev.map((item) => (item.id === id ? saved : item)));
+      setGalleryItems((prev) => {
+        const updated = prev.map((item) => (item.id === id ? saved : item));
+        cacheSet(CACHE_KEYS.gallery, updated); // update cache
+        return updated;
+      });
     } catch (err) {
-      setGalleryItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
-      );
+      setGalleryItems((prev) => {
+        const updated = prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item));
+        cacheSet(CACHE_KEYS.gallery, updated);
+        return updated;
+      });
     }
   };
 
@@ -358,7 +462,11 @@ export function App() {
     } catch (err) {
       console.warn(err);
     }
-    setGalleryItems((prev) => prev.filter((item) => item.id !== id));
+    setGalleryItems((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      cacheSet(CACHE_KEYS.gallery, updated); // update cache
+      return updated;
+    });
   };
 
   const handleConfirmRSVP = async (rsvpData: any) => {
@@ -450,11 +558,23 @@ export function App() {
       if (res.ok) {
         const saved = await res.json();
         setSiteSettings(saved);
+        cacheSet(CACHE_KEYS.settings, saved); // update cache
       }
     } catch (err) {
-      setSiteSettings((prev) => ({ ...prev, ...newSettings }));
+      setSiteSettings((prev) => {
+        const merged2 = { ...prev, ...newSettings };
+        cacheSet(CACHE_KEYS.settings, merged2);
+        return merged2;
+      });
     }
   };
+
+  if (isLoading) {
+    return <SkeletonLoader screen={currentScreen} />;
+  }
+
+  const activeDept = selectedDepartment || departments[0] || null;
+  const activeTeacher = selectedTeacher || teachers[0] || null;
 
   return (
     <div className="min-h-screen bg-[#fbf9f8] text-[#1b1c1c] font-sans selection:bg-[#fed65b]/40 selection:text-[#180331]">
@@ -483,34 +603,42 @@ export function App() {
       )}
 
       {currentScreen === 'department-teachers' && (
-        <DepartmentFacultyScreen
-          department={selectedDepartment}
-          teachers={teachers}
-          allDepartments={departments}
-          onSelectDepartment={handleSelectDepartment}
-          onSelectTeacher={handleSelectTeacher}
-          onNavigate={setCurrentScreen}
-          onOpenRSVP={handleOpenRSVP}
-        />
+        activeDept ? (
+          <DepartmentFacultyScreen
+            department={activeDept}
+            teachers={teachers}
+            allDepartments={departments}
+            onSelectDepartment={handleSelectDepartment}
+            onSelectTeacher={handleSelectTeacher}
+            onNavigate={setCurrentScreen}
+            onOpenRSVP={handleOpenRSVP}
+          />
+        ) : (
+          <SkeletonLoader screen="department-teachers" />
+        )
       )}
 
       {currentScreen === 'teacher' && (
-        <TeacherProfileScreen
-          teacher={selectedTeacher}
-          allTeachers={teachers}
-          eventInfo={eventInfo}
-          settings={siteSettings}
-          onNavigate={setCurrentScreen}
-          onSelectTeacher={handleSelectTeacher}
-          onOpenRSVP={handleOpenRSVP}
-          onBackToDepartment={() => {
-            const parentDept = departments.find(
-              (d) => d.id.toLowerCase() === selectedTeacher.departmentId.toLowerCase()
-            );
-            if (parentDept) setSelectedDepartment(parentDept);
-            setCurrentScreen('department-teachers');
-          }}
-        />
+        activeTeacher ? (
+          <TeacherProfileScreen
+            teacher={activeTeacher}
+            allTeachers={teachers}
+            eventInfo={eventInfo}
+            settings={siteSettings}
+            onNavigate={setCurrentScreen}
+            onSelectTeacher={handleSelectTeacher}
+            onOpenRSVP={handleOpenRSVP}
+            onBackToDepartment={() => {
+              const parentDept = departments.find(
+                (d) => d.id.toLowerCase() === activeTeacher.departmentId.toLowerCase()
+              );
+              if (parentDept) setSelectedDepartment(parentDept);
+              setCurrentScreen('department-teachers');
+            }}
+          />
+        ) : (
+          <SkeletonLoader screen="teacher" />
+        )
       )}
 
       {currentScreen === 'gallery' && (

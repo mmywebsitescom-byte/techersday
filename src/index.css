@@ -117,3 +117,24 @@
   margin-bottom: 24px;
 }
 
+/* Skeleton Shimmer Animations */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(230, 224, 238, 0.45) 0%,
+    rgba(250, 246, 255, 0.95) 50%,
+    rgba(230, 224, 238, 0.45) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerWave 1.8s infinite ease-in-out;
+}
+
