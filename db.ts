@@ -20,6 +20,9 @@ export function getPool(): pg.Pool {
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,
   });
+  _pool.on('error', (err) => {
+    console.error('[db.ts] Unexpected pg client idle error:', err);
+  });
   return _pool;
 }
 

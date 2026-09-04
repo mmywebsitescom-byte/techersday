@@ -16,9 +16,20 @@ app.use((_req, res, next) => {
   next();
 });
 
+const router = express.Router();
+
 // ── Health ───────────────────────────────────────────────────────────────────
-app.get('/api/health', async (_req, res) => {
+router.get('/health', async (_req, res) => {
   try {
+    if (!process.env.DATABASE_URL) {
+      return res.status(500).json({
+        status: 'error',
+        database: 'not_configured',
+        error: 'DATABASE_URL environment variable is missing on Vercel.',
+        hint: 'Go to Vercel → Project Settings → Environment Variables, add DATABASE_URL, and redeploy.',
+      });
+    }
+
     const stats = await db.getStats();
     res.json({
       status: 'ok',
@@ -27,69 +38,77 @@ app.get('/api/health', async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    res.status(500).json({ status: 'error', error: err?.message });
+    console.error('[Health Check Error]', err);
+    res.status(500).json({
+      status: 'error',
+      database: 'connection_error',
+      error: err?.message || 'Database connection error',
+    });
   }
 });
 
 // ── Event ────────────────────────────────────────────────────────────────────
-app.get('/api/event', async (_req, res) => {
+router.get('/event', async (_req, res) => {
   try {
     const event = await db.getCelebrationEvent();
     res.json(event);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch event info' });
+  } catch (err: any) {
+    console.error('Error fetching event:', err);
+    res.status(500).json({ error: 'Failed to fetch event info', detail: err?.message });
   }
 });
 
-app.put('/api/event', async (req, res) => {
+router.put('/event', async (req, res) => {
   try {
     const updated = await db.updateCelebrationEvent(req.body);
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update event' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update event', detail: err?.message });
   }
 });
 
 // ── Site Settings ────────────────────────────────────────────────────────────
-app.get('/api/site-settings', async (_req, res) => {
+router.get('/site-settings', async (_req, res) => {
   try {
     const settings = await db.getSiteSettings();
     res.json(settings);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch settings' });
+  } catch (err: any) {
+    console.error('Error fetching settings:', err);
+    res.status(500).json({ error: 'Failed to fetch settings', detail: err?.message });
   }
 });
 
-app.put('/api/site-settings', async (req, res) => {
+router.put('/site-settings', async (req, res) => {
   try {
     const updated = await db.updateSiteSettings(req.body);
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to save settings' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to save settings', detail: err?.message });
   }
 });
 
 // ── Departments ──────────────────────────────────────────────────────────────
-app.get('/api/departments', async (_req, res) => {
+router.get('/departments', async (_req, res) => {
   try {
     const depts = await db.getDepartments();
     res.json(depts);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch departments' });
+  } catch (err: any) {
+    console.error('Error fetching departments:', err);
+    res.status(500).json({ error: 'Failed to fetch departments', detail: err?.message });
   }
 });
 
-app.get('/api/departments/:id', async (req, res) => {
+router.get('/departments/:id', async (req, res) => {
   try {
     const dept = await db.getDepartmentById(req.params.id);
     if (!dept) return res.status(404).json({ error: 'Department not found' });
     res.json(dept);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch department' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch department', detail: err?.message });
   }
 });
 
-app.post('/api/departments', async (req, res) => {
+router.post('/departments', async (req, res) => {
   try {
     const body = req.body;
     if (!body.name || !body.code) {
@@ -106,33 +125,33 @@ app.post('/api/departments', async (req, res) => {
     };
     await db.createDepartment(newDept);
     res.status(201).json(newDept);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create department' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create department', detail: err?.message });
   }
 });
 
-app.put('/api/departments/:id', async (req, res) => {
+router.put('/departments/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const updated = await db.updateDepartment(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Department not found' });
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update department' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update department', detail: err?.message });
   }
 });
 
-app.delete('/api/departments/:id', async (req, res) => {
+router.delete('/departments/:id', async (req, res) => {
   try {
     await db.deleteDepartment(req.params.id);
     res.json({ success: true, message: 'Department deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete department' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete department', detail: err?.message });
   }
 });
 
 // ── Teachers ─────────────────────────────────────────────────────────────────
-app.get('/api/teachers', async (req, res) => {
+router.get('/teachers', async (req, res) => {
   try {
     const { departmentId, search } = req.query;
     const teachers = await db.getTeachers(
@@ -140,22 +159,23 @@ app.get('/api/teachers', async (req, res) => {
       typeof search === 'string' ? search : undefined
     );
     res.json(teachers);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch teachers' });
+  } catch (err: any) {
+    console.error('Error fetching teachers:', err);
+    res.status(500).json({ error: 'Failed to fetch teachers', detail: err?.message });
   }
 });
 
-app.get('/api/teachers/:id', async (req, res) => {
+router.get('/teachers/:id', async (req, res) => {
   try {
     const teacher = await db.getTeacherById(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
     res.json(teacher);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch teacher' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch teacher', detail: err?.message });
   }
 });
 
-app.post('/api/teachers', async (req, res) => {
+router.post('/teachers', async (req, res) => {
   try {
     const body = req.body;
     if (!body.name || !body.designation || !body.departmentId) {
@@ -183,33 +203,33 @@ app.post('/api/teachers', async (req, res) => {
 
     await db.createTeacher(newTeacher);
     res.status(201).json(newTeacher);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create teacher' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create teacher', detail: err?.message });
   }
 });
 
-app.put('/api/teachers/:id', async (req, res) => {
+router.put('/teachers/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const updated = await db.updateTeacher(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Teacher not found' });
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update teacher' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update teacher', detail: err?.message });
   }
 });
 
-app.delete('/api/teachers/:id', async (req, res) => {
+router.delete('/teachers/:id', async (req, res) => {
   try {
     await db.deleteTeacher(req.params.id);
     res.json({ success: true, message: 'Teacher deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete teacher' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete teacher', detail: err?.message });
   }
 });
 
 // ── Gallery ──────────────────────────────────────────────────────────────────
-app.get('/api/gallery', async (req, res) => {
+router.get('/gallery', async (req, res) => {
   try {
     const { category, search } = req.query;
     const items = await db.getGallery(
@@ -217,22 +237,23 @@ app.get('/api/gallery', async (req, res) => {
       typeof search === 'string' ? search : undefined
     );
     res.json(items);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch gallery' });
+  } catch (err: any) {
+    console.error('Error fetching gallery:', err);
+    res.status(500).json({ error: 'Failed to fetch gallery', detail: err?.message });
   }
 });
 
-app.get('/api/gallery/:id', async (req, res) => {
+router.get('/gallery/:id', async (req, res) => {
   try {
     const item = await db.getGalleryById(req.params.id);
     if (!item) return res.status(404).json({ error: 'Gallery item not found' });
     res.json(item);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch gallery item' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch gallery item', detail: err?.message });
   }
 });
 
-app.post('/api/gallery', async (req, res) => {
+router.post('/gallery', async (req, res) => {
   try {
     const { title, category, imageUrl, date, description } = req.body;
     if (!title || !imageUrl) {
@@ -249,42 +270,43 @@ app.post('/api/gallery', async (req, res) => {
     };
     await db.createGalleryItem(newItem);
     res.status(201).json(newItem);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to add gallery item' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to add gallery item', detail: err?.message });
   }
 });
 
-app.put('/api/gallery/:id', async (req, res) => {
+router.put('/gallery/:id', async (req, res) => {
   try {
     const id = req.params.id;
     const updated = await db.updateGalleryItem(id, req.body);
     if (!updated) return res.status(404).json({ error: 'Gallery item not found' });
     res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update gallery item' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update gallery item', detail: err?.message });
   }
 });
 
-app.delete('/api/gallery/:id', async (req, res) => {
+router.delete('/gallery/:id', async (req, res) => {
   try {
     await db.deleteGalleryItem(req.params.id);
     res.json({ success: true, message: 'Gallery item deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to delete gallery item' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete gallery item', detail: err?.message });
   }
 });
 
 // ── RSVPs ────────────────────────────────────────────────────────────────────
-app.get('/api/rsvp', async (_req, res) => {
+router.get('/rsvp', async (_req, res) => {
   try {
     const list = await db.getRsvps();
     res.json(list);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch RSVPs' });
+  } catch (err: any) {
+    console.error('Error fetching RSVPs:', err);
+    res.status(500).json({ error: 'Failed to fetch RSVPs', detail: err?.message });
   }
 });
 
-app.post('/api/rsvp', async (req, res) => {
+router.post('/rsvp', async (req, res) => {
   try {
     const { teacherId, teacherName, guestName, email, department, attending, guestCount, dietaryNeeds, wishesNote } = req.body;
     if (!guestName || !email) {
@@ -306,23 +328,24 @@ app.post('/api/rsvp', async (req, res) => {
     };
     await db.createRsvp(newRsvp);
     res.status(201).json({ success: true, rsvp: newRsvp });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to submit RSVP' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to submit RSVP', detail: err?.message });
   }
 });
 
 // ── Stats Dashboard ──────────────────────────────────────────────────────────
-app.get('/api/stats', async (_req, res) => {
+router.get('/stats', async (_req, res) => {
   try {
     const stats = await db.getStats();
     res.json(stats);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
+  } catch (err: any) {
+    console.error('Error fetching stats:', err);
+    res.status(500).json({ error: 'Failed to fetch stats', detail: err?.message });
   }
 });
 
 // ── Admin Auth ───────────────────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const isValid = await db.validateAdminCredentials(email || '', password || '');
@@ -341,8 +364,18 @@ app.post('/api/auth/login', async (req, res) => {
 
     return res.status(401).json({ error: 'Incorrect email or password. Please try again.' });
   } catch (err: any) {
-    res.status(500).json({ error: 'Authentication error. Please try again.' });
+    res.status(500).json({ error: 'Authentication error. Please try again.', detail: err?.message });
   }
+});
+
+// Mount router on BOTH '/api' and '/'
+app.use('/api', router);
+app.use('/', router);
+
+// Global unhandled error middleware
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Unhandled API Error]:', err);
+  res.status(500).json({ error: 'Internal server error', detail: err?.message || String(err) });
 });
 
 export default app;
